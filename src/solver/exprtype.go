@@ -68,14 +68,23 @@ func exprTypeLocalCustom(sc *meta.Scope, cs *meta.ClassParseState, n ir.Node, cu
 
 	switch n := n.(type) {
 	case *ir.FunctionCallExpr:
+		if n.EllipsisTkn != nil {
+			return firstClassCallableType
+		}
 		return functionCallType(n, sc, cs, custom)
 	case *ir.StaticCallExpr:
+		if n.EllipsisTkn != nil {
+			return firstClassCallableType
+		}
 		return staticFunctionCallType(n, cs)
 	case *ir.StaticPropertyFetchExpr:
 		return staticPropertyFetchType(n, cs)
 	case *ir.SimpleVar:
 		return simpleVarType(n, sc)
 	case *ir.MethodCallExpr:
+		if n.EllipsisTkn != nil {
+			return firstClassCallableType
+		}
 		return methodCallType(n, sc, cs, custom)
 	case *ir.PropertyFetchExpr:
 		return propertyFetchType(n, sc, cs, custom)
@@ -162,6 +171,11 @@ func exprTypeLocalCustom(sc *meta.Scope, cs *meta.ClassParseState, n ir.Node, cu
 
 	return types.Map{}
 }
+
+// firstClassCallableType is the type of the first-class callable syntax (PHP 8.1):
+// `f(...)`, `$obj->m(...)` and `A::m(...)` create a Closure and don't call anything,
+// so the result is not what the function returns.
+var firstClassCallableType = types.NewMap(`\Closure`).Immutable()
 
 // unaryBitwiseOpType is used for unary bitwise operations.
 func unaryBitwiseOpType(sc *meta.Scope, cs *meta.ClassParseState, x ir.Node, custom []CustomType) types.Map {

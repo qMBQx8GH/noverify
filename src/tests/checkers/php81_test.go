@@ -276,3 +276,75 @@ class Child extends Enum {}
 echo Enum::X, (new Child())::X;
 `)
 }
+
+func TestPHP81FirstClassCallableIsClosure(t *testing.T) {
+	linttest.SimpleNegativeTest(t, `<?php
+function foo(int $a): int { return $a; }
+
+class A {
+  /** */
+  public function m(int $x): string { return (string)$x; }
+  /** */
+  public static function s(int $x): bool { return $x > 0; }
+}
+
+function takesClosure(\Closure $c): void { echo $c(1); }
+
+$a = new A();
+$f = strlen(...);
+$g = foo(...);
+$h = $a->m(...);
+$i = A::s(...);
+
+$bound = $f->bindTo(null);
+echo $g->call(new A(), 1);
+echo $h->bindTo($a) !== null;
+echo $i instanceof \Closure;
+
+takesClosure($f);
+takesClosure($g);
+takesClosure($h);
+takesClosure($i);
+`)
+}
+
+func TestPHP81FirstClassCallableTypeErrors(t *testing.T) {
+	test := linttest.NewSuite(t)
+	test.AddFile(`<?php
+function foo(int $a): int { return $a; }
+
+class A {
+  /** */
+  public function m(int $x): string { return (string)$x; }
+  /** */
+  public static function s(int $x): bool { return $x > 0; }
+}
+
+$a = new A();
+
+// These are the closures, not the results of the calls.
+$f = foo(...);
+echo $f->nope();
+$g = $a->m(...);
+echo $g->nope();
+$h = A::s(...);
+echo $h->nope();
+
+// A real call has the type of the returned value.
+$x = foo(1);
+echo $x->nope();
+$y = $a->m(1);
+echo $y->nope();
+$z = A::s(1);
+echo $z->nope();
+`)
+	test.Expect = []string{
+		`Call to undefined method {\Closure}->nope()`,
+		`Call to undefined method {\Closure}->nope()`,
+		`Call to undefined method {\Closure}->nope()`,
+		`Call to undefined method {int}->nope()`,
+		`Call to undefined method {string}->nope()`,
+		`Call to undefined method {bool}->nope()`,
+	}
+	test.RunAndMatch()
+}
