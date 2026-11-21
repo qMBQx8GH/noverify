@@ -26,7 +26,11 @@ type LinterRunner struct {
 
 	outputFp io.Writer
 
+	// filenameFilter is used for the files that are analyzed (reported).
 	filenameFilter *workspace.FilenameFilter
+	// indexFilter is used for the files that are only indexed, it skips
+	// the files and directories passed with --exclude-files only.
+	indexFilter *workspace.FilenameFilter
 }
 
 func NewLinterRunner(lint *linter.Linter, checkersFilter *linter.CheckersFilter) *LinterRunner {
@@ -81,6 +85,13 @@ func (l *LinterRunner) Init(ruleSets []*rules.Set, flags *ParsedFlags) error {
 
 	if err := l.collectGitIgnoreFiles(); err != nil {
 		return fmt.Errorf("collect gitignore files: %v", err)
+	}
+
+	l.indexFilter = workspace.NewFilenameFilter(nil)
+	if flags.ExcludeFiles != "" {
+		skip := strings.Split(flags.ExcludeFiles, ",")
+		l.indexFilter.SetSkipPaths(skip)
+		l.filenameFilter.SetSkipPaths(skip)
 	}
 
 	w, err := createWriter(flags.Output)

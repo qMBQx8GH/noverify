@@ -103,6 +103,18 @@ Unlike `--index-only-files`, excluded files will be analyzed and errors may be f
 
 Use this flag if you do not want to see errors for some files or directories and it is convenient to use a regular expression to express the name.
 
+### How to exclude files and folders from both indexing and analysis
+
+It looks like this:
+
+```bash
+noverify check --exclude-files='main/cli/bootstrap.php,main/dev/cli/annotations/bootstrap.php' ./
+```
+
+The `--exclude-files` option accepts a comma-separated list of files and folders. Relative paths are resolved against the working directory. A folder is excluded together with everything inside of it.
+
+Unlike `--exclude`, the listed files are not even indexed: the functions and classes declared in them are unknown to the linter, so they do not take part in type inference. Use this flag for incomplete stubs, which otherwise give false positives for the code that uses them (and also for the files in the paths passed to `--index-only-files`).
+
 ### How to disable file checking without changing the launch command
 
 It looks like this:

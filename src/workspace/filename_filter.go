@@ -1,13 +1,20 @@
 package workspace
 
 import (
+	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/monochromegane/go-gitignore"
 )
 
 type FilenameFilter struct {
 	exclude *regexp.Regexp
+
+	// skipPaths are the absolute paths of the files and directories that
+	// are always ignored (see SetSkipPaths).
+	skipPaths []string
 
 	gitignoreEnabled bool
 	matchers         []gitignore.IgnoreMatcher
@@ -19,6 +26,33 @@ func NewFilenameFilter(exclude *regexp.Regexp) *FilenameFilter {
 		exclude:         exclude,
 		initialMatchers: make(map[string]struct{}),
 	}
+}
+
+// SetSkipPaths sets the files and directories that are always ignored.
+//
+// Paths are resolved to absolute ones (relative paths are relative to the working
+// directory). A directory is ignored together with everything inside of it.
+func (filter *FilenameFilter) SetSkipPaths(paths []string) {
+	filter.skipPaths = filter.skipPaths[:0]
+	for _, p := range paths {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		if abs, err := filepath.Abs(p); err == nil {
+			p = abs
+		}
+		filter.skipPaths = append(filter.skipPaths, filepath.Clean(p))
+	}
+}
+
+func (filter *FilenameFilter) isSkipped(path string) bool {
+	for _, skip := range filter.skipPaths {
+		if path == skip || strings.HasPrefix(path, skip+string(os.PathSeparator)) {
+			return true
+		}
+	}
+	return false
 }
 
 func (filter *FilenameFilter) EnableGitignore() { filter.gitignoreEnabled = true }
@@ -62,6 +96,9 @@ func (filter *FilenameFilter) IgnoreDir(path string) bool {
 }
 
 func (filter *FilenameFilter) ignore(path string, isDir bool) bool {
+	if filter.isSkipped(path) {
+		return true
+	}
 	if filter.exclude != nil && filter.exclude.MatchString(path) {
 		return true
 	}

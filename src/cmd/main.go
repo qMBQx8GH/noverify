@@ -217,7 +217,7 @@ func mainNoExit(ctx *AppContext) (status int, err error) {
 	filenames := ctx.ParsedArgs
 
 	log.Printf("Indexing %+v", filenames)
-	runner.linter.AnalyzeFiles(workspace.ReadFilenames(filenames, nil, lint.Config().PhpExtensions))
+	runner.linter.AnalyzeFiles(workspace.ReadFilenames(filenames, runner.indexFilter, lint.Config().PhpExtensions))
 	parseIndexOnlyFiles(runner)
 	runner.linter.MetaInfo().SetIndexingComplete(true)
 

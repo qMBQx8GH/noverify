@@ -21,7 +21,7 @@ func gitParseUntracked(l *LinterRunner) []*linter.Report {
 		log.Fatalf("get untracked files: %v", err)
 	}
 
-	return l.linter.AnalyzeFiles(workspace.ReadFilenames(filenames, nil, l.config.PhpExtensions))
+	return l.linter.AnalyzeFiles(workspace.ReadFilenames(filenames, l.indexFilter, l.config.PhpExtensions))
 }
 
 func parseIndexOnlyFiles(l *LinterRunner) {
@@ -29,7 +29,7 @@ func parseIndexOnlyFiles(l *LinterRunner) {
 		return
 	}
 	filenames := strings.Split(l.flags.IndexOnlyFiles, ",")
-	l.linter.AnalyzeFiles(workspace.ReadFilenames(filenames, nil, l.config.PhpExtensions))
+	l.linter.AnalyzeFiles(workspace.ReadFilenames(filenames, l.indexFilter, l.config.PhpExtensions))
 }
 
 // Not the best name, and not the best function signature.
