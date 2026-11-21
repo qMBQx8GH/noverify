@@ -58,7 +58,8 @@ import (
 //	59 - added the ClassReadonly flag (PHP 8.2 readonly classes)
 //	60 - added the ClassAllowDynamicProperties flag
 //	61 - the parameters of the stubs are selected by the PHP version (PhpStormStubsElementAvailable from/to)
-const cacheVersion = 61
+//	62 - the default PHP version is 8.3 (the parameters of the stubs depend on it), the Modifiers of anonymous classes
+const cacheVersion = 62
 
 var (
 	errWrongVersion = errors.New("Wrong cache version")

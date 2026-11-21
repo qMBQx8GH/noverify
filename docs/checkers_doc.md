@@ -4,7 +4,7 @@
 
 | Total checks | Checks enabled by default | Disabled checks by default | Autofixable checks |
 | ------------ | ------------------------- | -------------------------- | ------------------ |
-| 121           | 104                        | 17                         | 15                 |
+| 123           | 106                        | 17                         | 15                 |
 
 ## Table of contents
  - Enabled by default
@@ -22,6 +22,7 @@
    - [`caseBreak` checker](#casebreak-checker)
    - [`caseContinue` checker](#casecontinue-checker)
    - [`catchOrder` checker](#catchorder-checker)
+   - [`classConstantType` checker](#classconstanttype-checker)
    - [`concatenationPrecedence` checker](#concatenationprecedence-checker)
    - [`constCase` checker (autofixable)](#constcase-checker)
    - [`countUse` checker (autofixable)](#countuse-checker)
@@ -76,6 +77,7 @@
    - [`notSafeCall` checker](#notsafecall-checker)
    - [`offBy1` checker (autofixable)](#offby1-checker)
    - [`oldStyleConstructor` checker](#oldstyleconstructor-checker)
+   - [`overrideAttribute` checker](#overrideattribute-checker)
    - [`paramClobber` checker](#paramclobber-checker)
    - [`parentConstructor` checker](#parentconstructor-checker)
    - [`phpAliases` checker (autofixable)](#phpaliases-checker)
@@ -440,6 +442,24 @@ try {
 } catch (Exception $e) {
   // Ok, it will catch everything else.
 }
+```
+<p><br></p>
+
+
+### `classConstantType` checker
+
+#### Description
+
+Report a class constant (PHP 8.3) with an invalid type or with a value of another type.
+
+#### Non-compliant code:
+```php
+const int LIMIT = "10"; // The value is a string.
+```
+
+#### Compliant code:
+```php
+const int LIMIT = 10;
 ```
 <p><br></p>
 
@@ -1594,6 +1614,24 @@ class Foo {
 class Foo {
   public function __construct($v) { $this->v = $v; }
 }
+```
+<p><br></p>
+
+
+### `overrideAttribute` checker
+
+#### Description
+
+Report #[\Override] on a method that does not override a method of a parent class or of an interface.
+
+#### Non-compliant code:
+```php
+#[\Override] public function typo() {} // The parent class has no method typo().
+```
+
+#### Compliant code:
+```php
+#[\Override] public function method() {}
 ```
 <p><br></p>
 

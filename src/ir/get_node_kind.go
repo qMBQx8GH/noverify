@@ -63,6 +63,7 @@ const (
 	KindDivExpr
 	KindDnumber
 	KindDoStmt
+	KindDynamicClassConstFetchExpr
 	KindEchoStmt
 	KindElseIfStmt
 	KindElseStmt
@@ -284,6 +285,8 @@ func GetNodeKind(x Node) NodeKind {
 		return KindDnumber
 	case *DoStmt:
 		return KindDoStmt
+	case *DynamicClassConstFetchExpr:
+		return KindDynamicClassConstFetchExpr
 	case *EchoStmt:
 		return KindEchoStmt
 	case *ElseIfStmt:

@@ -163,6 +163,12 @@ func (d *rootWalker) EnterNode(n ir.Node) (res bool) {
 		d.reportPHPDocErrors(doc.errs)
 		d.handleClassDoc(doc, &cl)
 
+		for _, m := range n.Modifiers {
+			if strings.EqualFold("readonly", m.Value) {
+				cl.Flags |= meta.ClassReadonly // all properties of a readonly class are readonly
+			}
+		}
+
 		d.meta.Classes.Set(d.ctx.st.CurrentClass, cl)
 
 	case *ir.InterfaceStmt:
@@ -1061,6 +1067,10 @@ func (d *rootWalker) enterClassConstList(list *ir.ClassConstListStmt) bool {
 	// The declared type of the constants (PHP 8.3) is more precise than the type of the expression.
 	hintType, hasHint := d.parseTypeHintNode(list.Type)
 
+	if d.metaInfo().IsIndexingComplete() {
+		d.checkTypedClassConstants(list)
+	}
+
 	for _, cNode := range list.Consts {
 		c := cNode.(*ir.ConstantStmt)
 
@@ -1120,6 +1130,7 @@ func (d *rootWalker) enterClassMethod(meth *ir.ClassMethodStmt) bool {
 	}
 
 	d.checker.CheckMagicMethod(meth.MethodName, nm, modif, len(meth.Params))
+	d.checker.CheckOverrideAttribute(meth, class)
 
 	sc := meta.NewScope()
 	if !modif.static {
@@ -2080,4 +2091,113 @@ func (d *rootWalker) checkFilterSet(m *phpgrep.MatchData, sc *meta.Scope, filter
 	}
 
 	return true, nil
+}
+
+// checkTypedClassConstants reports the invalid types of the class constants (PHP 8.3)
+// and the values that don't match the declared type.
+//
+// PHP checks the type strictly, the only coercion is int to float. Only the values
+// with a known type (literals and the constant expressions of them) are checked.
+func (d *rootWalker) checkTypedClassConstants(list *ir.ClassConstListStmt) {
+	if list.Type == nil {
+		return
+	}
+
+	declared := types.TypeHintTypes(list.Type)
+	names := make(map[string]bool, len(declared))
+	for _, t := range declared {
+		names[strings.ToLower(strings.TrimPrefix(t.Elem, `\`))] = true
+	}
+
+	className := d.ctx.st.CurrentClass
+	typeText := typeHintText(list.Type)
+
+	for _, bad := range []string{"void", "never", "static", "callable"} {
+		if names[bad] {
+			d.Report(list.Type, LevelError, "classConstantType", "Class constant %s cannot have type %s", className, bad)
+			return
+		}
+	}
+
+	if names["mixed"] {
+		return
+	}
+
+	for _, cNode := range list.Consts {
+		c := cNode.(*ir.ConstantStmt)
+
+		valueType, ok := d.classConstantValueType(c.Expr)
+		if !ok || classConstantTypeAccepts(names, valueType) {
+			continue
+		}
+
+		shown := valueType
+		if shown == "true" || shown == "false" {
+			shown = "bool"
+		}
+		d.Report(c, LevelError, "classConstantType", "Cannot use %s as value for class constant %s::%s of type %s",
+			shown, className, c.ConstantName.Value, typeText)
+	}
+}
+
+// classConstantValueType returns the type of the value of the constant expression
+// if it is known: "int", "float", "string", "bool", "null" or "array".
+func (d *rootWalker) classConstantValueType(expr ir.Node) (string, bool) {
+	switch e := expr.(type) {
+	case *ir.ArrayExpr:
+		return "array", true
+	case *ir.ConstFetchExpr:
+		if strings.EqualFold(strings.TrimPrefix(e.Constant.Value, `\`), "null") {
+			return "null", true
+		}
+	}
+
+	switch value := constfold.Eval(d.ctx.st, expr); value.Type {
+	case meta.Integer:
+		return "int", true
+	case meta.Float:
+		return "float", true
+	case meta.String:
+		return "string", true
+	case meta.Bool:
+		if b, ok := value.Value.(bool); ok && b {
+			return "true", true
+		}
+		return "false", true
+	}
+
+	return "", false
+}
+
+// classConstantTypeAccepts reports whether the declared type (the lowercased names of
+// its parts) accepts the value of valueType.
+func classConstantTypeAccepts(declared map[string]bool, valueType string) bool {
+	switch valueType {
+	case "int":
+		return declared["int"] || declared["float"] // int is coerced to float
+	case "float", "string", "null":
+		return declared[valueType]
+	case "array":
+		return declared["array"] || declared["iterable"]
+	case "true":
+		return declared["bool"] || declared["true"]
+	case "false":
+		return declared["bool"] || declared["false"]
+	}
+	return true
+}
+
+// typeHintText returns the text of the type hint, for the messages.
+func typeHintText(n ir.Node) string {
+	switch n := n.(type) {
+	case *ir.Union:
+		parts := make([]string, 0, len(n.Types))
+		for _, t := range n.Types {
+			parts = append(parts, typeHintText(t))
+		}
+		return strings.Join(parts, "|")
+	case *ir.Nullable:
+		return "?" + typeHintText(n.Expr)
+	}
+	return irutil.FmtNode(n)
 }

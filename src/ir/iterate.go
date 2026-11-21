@@ -553,6 +553,18 @@ func (n *DoStmt) IterateTokens(cb func(*token.Token) bool) {
 	}
 }
 
+func (n *DynamicClassConstFetchExpr) IterateTokens(cb func(*token.Token) bool) {
+	if !traverseToken(n.DoubleColonTkn, cb) {
+		return
+	}
+	if !traverseToken(n.OpenCurlyBracketTkn, cb) {
+		return
+	}
+	if !traverseToken(n.CloseCurlyBracketTkn, cb) {
+		return
+	}
+}
+
 func (n *EchoStmt) IterateTokens(cb func(*token.Token) bool) {
 	if !traverseToken(n.EchoTkn, cb) {
 		return

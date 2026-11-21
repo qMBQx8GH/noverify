@@ -5,6 +5,9 @@ func (n *AnonClassExpr) Walk(v Visitor) {
 	if !v.EnterNode(n) {
 		return
 	}
+	for _, nn := range n.Modifiers {
+		nn.Walk(v)
+	}
 	for _, nn := range n.Args {
 		nn.Walk(v)
 	}
@@ -709,6 +712,19 @@ func (n *DoStmt) Walk(v Visitor) {
 	}
 	if n.Cond != nil {
 		n.Cond.Walk(v)
+	}
+	v.LeaveNode(n)
+}
+
+func (n *DynamicClassConstFetchExpr) Walk(v Visitor) {
+	if !v.EnterNode(n) {
+		return
+	}
+	if n.Class != nil {
+		n.Class.Walk(v)
+	}
+	if n.Expr != nil {
+		n.Expr.Walk(v)
 	}
 	v.LeaveNode(n)
 }

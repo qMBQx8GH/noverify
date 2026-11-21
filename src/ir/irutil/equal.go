@@ -16,6 +16,14 @@ func NodeEqual(x, y ir.Node) bool {
 		if !ok || x == nil || y == nil {
 			return x == y
 		}
+		if len(x.Modifiers) != len(y.Modifiers) {
+			return false
+		}
+		for i := range x.Modifiers {
+			if !NodeEqual(x.Modifiers[i], y.Modifiers[i]) {
+				return false
+			}
+		}
 		if !NodeSliceEqual(x.Args, y.Args) {
 			return false
 		}
@@ -754,6 +762,18 @@ func NodeEqual(x, y ir.Node) bool {
 			return false
 		}
 		if !NodeEqual(x.Cond, y.Cond) {
+			return false
+		}
+		return true
+	case *ir.DynamicClassConstFetchExpr:
+		y, ok := y.(*ir.DynamicClassConstFetchExpr)
+		if !ok || x == nil || y == nil {
+			return x == y
+		}
+		if !NodeEqual(x.Class, y.Class) {
+			return false
+		}
+		if !NodeEqual(x.Expr, y.Expr) {
 			return false
 		}
 		return true

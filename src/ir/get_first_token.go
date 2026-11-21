@@ -9,6 +9,11 @@ import (
 func GetFirstToken(n Node) *token.Token {
 	switch n := n.(type) {
 	case *AnonClassExpr:
+		if n.Modifiers != nil {
+			if n.Modifiers[0] != nil {
+				return GetFirstToken(n.Modifiers[0])
+			}
+		}
 		if n.ClassTkn != nil {
 			return n.ClassTkn
 		}
@@ -778,6 +783,22 @@ func GetFirstToken(n Node) *token.Token {
 		}
 		if n.SemiColonTkn != nil {
 			return n.SemiColonTkn
+		}
+	case *DynamicClassConstFetchExpr:
+		if n.Class != nil {
+			return GetFirstToken(n.Class)
+		}
+		if n.DoubleColonTkn != nil {
+			return n.DoubleColonTkn
+		}
+		if n.OpenCurlyBracketTkn != nil {
+			return n.OpenCurlyBracketTkn
+		}
+		if n.Expr != nil {
+			return GetFirstToken(n.Expr)
+		}
+		if n.CloseCurlyBracketTkn != nil {
+			return n.CloseCurlyBracketTkn
 		}
 	case *EchoStmt:
 		if n.EchoTkn != nil {

@@ -96,6 +96,11 @@ func NewSuite(t testing.TB) *Suite {
 	return newSuite(t, "8.1")
 }
 
+// NewPHP83Suite returns a new linter test suite for t with PHP 8.3.
+func NewPHP83Suite(t testing.TB) *Suite {
+	return newSuite(t, "8.3")
+}
+
 // NewPHP7Suite returns a new linter test suite for t with PHP 7.4.
 func NewPHP7Suite(t testing.TB) *Suite {
 	return newSuite(t, "7.4")

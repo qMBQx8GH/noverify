@@ -191,7 +191,7 @@ func (s *RulesTestSuite) compare(expects []string, reports []string) (unmatched 
 // handleFileContents reads, parses the resulting file, and splits it into lines.
 func (s *RulesTestSuite) handleFileContents(file string) (lines []string, reports []*linter.Report, err error) {
 	rawCheckerName := file
-	lint := linter.NewLinter(linter.NewConfig("8.2"))
+	lint := linter.NewLinter(linter.NewConfig("8.3"))
 	if strings.Contains(file, "_7.4") {
 		lint = linter.NewLinter(linter.NewConfig("7.4"))
 		rawCheckerName = strings.ReplaceAll(file, "_7.4", "")

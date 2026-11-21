@@ -131,8 +131,10 @@ type AssignShiftRight struct {
 
 // AnonClassExpr is an anonymous class expression.
 // $Args may contain constructor call arguments `new class ($Args...) {}`.
+// $Modifiers consist of the identifier `readonly` (PHP 8.3).
 type AnonClassExpr struct {
 	Position             *position.Position
+	Modifiers            []*Identifier
 	ClassTkn             *token.Token
 	OpenParenthesisTkn   *token.Token
 	Args                 []Node
@@ -455,6 +457,17 @@ type ClassConstFetchExpr struct {
 	Class          Node
 	DoubleColonTkn *token.Token
 	ConstantName   *Identifier
+}
+
+// DynamicClassConstFetchExpr is a `$Class::{$Expr}` expression (PHP 8.3),
+// the name of the constant is the value of $Expr.
+type DynamicClassConstFetchExpr struct {
+	Position             *position.Position
+	Class                Node
+	DoubleColonTkn       *token.Token
+	OpenCurlyBracketTkn  *token.Token
+	Expr                 Node
+	CloseCurlyBracketTkn *token.Token
 }
 
 // CloneExpr is a `clone $Expr` expression.

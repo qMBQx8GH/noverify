@@ -13,6 +13,13 @@ func NodeClone(x ir.Node) ir.Node {
 	switch x := x.(type) {
 	case *ir.AnonClassExpr:
 		clone := *x
+		{
+			sliceClone := make([]*ir.Identifier, len(x.Modifiers))
+			for i := range x.Modifiers {
+				sliceClone[i] = NodeClone(x.Modifiers[i]).(*ir.Identifier)
+			}
+			clone.Modifiers = sliceClone
+		}
 		clone.Args = NodeSliceClone(x.Args)
 		clone.Class = classClone(x.Class)
 		return &clone
@@ -495,6 +502,15 @@ func NodeClone(x ir.Node) ir.Node {
 		}
 		if x.Cond != nil {
 			clone.Cond = NodeClone(x.Cond)
+		}
+		return &clone
+	case *ir.DynamicClassConstFetchExpr:
+		clone := *x
+		if x.Class != nil {
+			clone.Class = NodeClone(x.Class)
+		}
+		if x.Expr != nil {
+			clone.Expr = NodeClone(x.Expr)
 		}
 		return &clone
 	case *ir.EchoStmt:

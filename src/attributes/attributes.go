@@ -18,6 +18,23 @@ const (
 	AllowDynamicPropertiesAttribute = `\AllowDynamicProperties`
 )
 
+// OverrideAttribute marks a method that must override or implement a method of
+// a parent class or of an interface (PHP 8.3).
+const OverrideAttribute = `\Override`
+
+// Override reports whether the method is marked with #[\Override].
+func Override(groups []*ir.AttributeGroup, state *meta.ClassParseState) (found bool) {
+	Each(groups, func(attr *ir.Attribute) bool {
+		if Name(attr, state) == OverrideAttribute {
+			found = true
+			return false
+		}
+		return true
+	})
+
+	return found
+}
+
 // AllowDynamicProperties reports whether the class is marked with #[\AllowDynamicProperties].
 func AllowDynamicProperties(groups []*ir.AttributeGroup, state *meta.ClassParseState) (found bool) {
 	Each(groups, func(attr *ir.Attribute) bool {

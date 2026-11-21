@@ -3,6 +3,7 @@ package linter
 import (
 	"strings"
 
+	"github.com/VKCOM/noverify/src/attributes"
 	"github.com/VKCOM/noverify/src/ir"
 	"github.com/VKCOM/noverify/src/ir/irutil"
 	"github.com/VKCOM/noverify/src/meta"
@@ -997,4 +998,91 @@ func (r *rootChecker) ReportUndefinedClass(n ir.Node, name string) {
 
 func (r *rootChecker) ReportUndefinedTrait(n ir.Node, name string) {
 	r.walker.Report(n, LevelError, "undefinedTrait", "Trait named %s does not exist", name)
+}
+
+// CheckOverrideAttribute reports #[\Override] on a method that does not override anything.
+//
+// PHP requires a method with the same name in a parent class, in an implemented
+// interface or an abstract method in a used trait. The private methods of the
+// parents are not inherited, so they don't count. A constructor counts only if it
+// is abstract or declared in an interface, `__toString()` always overrides Stringable.
+//
+// If some of the ancestors is unknown, nothing is reported.
+func (r *rootChecker) CheckOverrideAttribute(meth *ir.ClassMethodStmt, class meta.ClassInfo) {
+	if !r.info.IsIndexingComplete() || r.state.IsTrait {
+		return
+	}
+	if !attributes.Override(meth.AttrGroups, r.state) {
+		return
+	}
+
+	name := meth.MethodName.Value
+	if strings.EqualFold(name, "__toString") {
+		return
+	}
+
+	found, unknown := r.findOverriddenMethod(class, name, map[string]struct{}{class.Name: {}})
+	if found || unknown {
+		return
+	}
+
+	r.walker.Report(meth.MethodName, LevelError, "overrideAttribute",
+		"%s::%s() has #[\\Override] attribute, but no matching parent method exists", class.Name, name)
+}
+
+// findOverriddenMethod searches for the method in the parent class, in the interfaces and
+// in the traits of the class (recursively). unknown is true if some of them is not indexed.
+func (r *rootChecker) findOverriddenMethod(class meta.ClassInfo, name string, visited map[string]struct{}) (found, unknown bool) {
+	ancestors := make([]string, 0, 1+len(class.Interfaces)+len(class.ParentInterfaces)+len(class.Traits))
+	if class.Parent != "" {
+		ancestors = append(ancestors, class.Parent)
+	}
+	for iface := range class.Interfaces {
+		ancestors = append(ancestors, iface)
+	}
+	ancestors = append(ancestors, class.ParentInterfaces...)
+	for trait := range class.Traits {
+		ancestors = append(ancestors, trait)
+	}
+
+	for _, ancestorName := range ancestors {
+		if _, ok := visited[ancestorName]; ok {
+			continue
+		}
+		visited[ancestorName] = struct{}{}
+
+		ancestor, ok := r.info.GetClass(ancestorName)
+		isTrait := false
+		if !ok {
+			ancestor, ok = r.info.GetTrait(ancestorName)
+			isTrait = true
+		}
+		if !ok {
+			unknown = true
+			continue
+		}
+
+		if method, ok := ancestor.Methods.Get(name); ok && method.AccessLevel != meta.Private {
+			// The implemented method of a trait is not overridden, the method of the class
+			// replaces it, only the abstract method of a trait can be implemented.
+			// The constructor counts only if it is abstract or declared in an interface.
+			isConstructor := strings.EqualFold(name, "__construct")
+			switch {
+			case isTrait:
+				if method.IsAbstract() {
+					return true, unknown
+				}
+			case !isConstructor || method.IsAbstract() || ancestor.IsInterface():
+				return true, unknown
+			}
+		}
+
+		ancestorFound, ancestorUnknown := r.findOverriddenMethod(ancestor, name, visited)
+		if ancestorFound {
+			return true, unknown
+		}
+		unknown = unknown || ancestorUnknown
+	}
+
+	return false, unknown
 }

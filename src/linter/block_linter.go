@@ -32,48 +32,48 @@ func (b *blockLinter) enterNode(n ir.Node) {
 
 	case *ir.Assign:
 		b.checkAssign(n)
-		b.checkReadonlyWrite(n.Variable, true)
+		b.checkReadonlyWrite(n.Variable, readonlyAssign)
 
 	case *ir.AssignReference:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyReference)
 
 	case *ir.AssignPlus:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignMinus:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignMul:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignDiv:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignMod:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignPow:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignConcat:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignCoalesce:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignBitwiseAnd:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignBitwiseOr:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignBitwiseXor:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignShiftLeft:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.AssignShiftRight:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.PostIncExpr:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.PostDecExpr:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.PreIncExpr:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.PreDecExpr:
-		b.checkReadonlyWrite(n.Variable, false)
+		b.checkReadonlyWrite(n.Variable, readonlyModify)
 	case *ir.UnsetStmt:
 		for _, v := range n.Vars {
-			b.checkReadonlyWrite(v, false)
+			b.checkReadonlyWrite(v, readonlyUnset)
 		}
 
 	case *ir.ArrayExpr:
@@ -381,21 +381,36 @@ func (b *blockLinter) report(n ir.Node, level int, checkName, msg string, args .
 	b.walker.report(n, level, checkName, msg, args...)
 }
 
+// readonlyWriteKind is a kind of an operation on a property.
+type readonlyWriteKind int
+
+const (
+	readonlyAssign    readonlyWriteKind = iota // $this->x = 1
+	readonlyModify                             // $this->x += 1, $this->x++
+	readonlyUnset                              // unset($this->x)
+	readonlyReference                          // $a = &$this->x
+)
+
 // checkReadonlyWrite reports a modification of a readonly property (PHP 8.1).
 //
-// A plain assignment (canInitialize) to a property is allowed from the scope of the
-// declaring class since it can be the initialization; without flow analysis we can't
-// tell it from a second write, so it is reported only from outside of the class.
+// A plain assignment to a property is allowed from the scope of the declaring class
+// since it can be the initialization; without flow analysis we can't tell it from
+// a second write, so it is reported only from outside of the class.
 // Any other modification (compound assignment, ++/--, unset, reference, array
 // element write) is always an error.
-func (b *blockLinter) checkReadonlyWrite(target ir.Node, canInitialize bool) {
+//
+// Since PHP 8.3 a readonly property of $this can be modified once (assigned, changed
+// or unset) in __clone(), it is used for the deep cloning. An array element
+// write (an indirect modification) and a reference are still errors there.
+func (b *blockLinter) checkReadonlyWrite(target ir.Node, kind readonlyWriteKind) {
+	indirect := false
 	for {
 		dim, ok := target.(*ir.ArrayDimFetchExpr)
 		if !ok {
 			break
 		}
 		target = dim.Variable
-		canInitialize = false
+		indirect = true
 	}
 
 	e, ok := target.(*ir.PropertyFetchExpr)
@@ -408,12 +423,34 @@ func (b *blockLinter) checkReadonlyWrite(target ir.Node, canInitialize bool) {
 		return
 	}
 
-	if canInitialize && b.walker.r.ctx.st.CurrentClass == fetch.className {
-		return
+	insideDeclaringClass := b.walker.r.ctx.st.CurrentClass == fetch.className
+
+	if !indirect && insideDeclaringClass {
+		if kind == readonlyAssign {
+			return // can be the initialization
+		}
+		if kind != readonlyReference && b.isCloneOfThis(e) {
+			return
+		}
 	}
 
 	b.report(e, LevelError, "readonlyModification", "Cannot modify readonly property %s::$%s",
 		fetch.className, fetch.propertyNode.Value)
+}
+
+// isCloneOfThis reports whether the property of $this is accessed inside __clone()
+// and the PHP version allows to modify readonly properties there (8.3).
+func (b *blockLinter) isCloneOfThis(e *ir.PropertyFetchExpr) bool {
+	if !strings.EqualFold(b.walker.r.ctx.st.CurrentFunction, "__clone") {
+		return false
+	}
+
+	if v, ok := e.Variable.(*ir.SimpleVar); !ok || v.Name != "this" {
+		return false
+	}
+
+	phpVersion := b.walker.r.config.PhpVersion
+	return phpVersion == nil || phpVersion.GreaterOrEqual(&version.Version{Major: 8, Minor: 3})
 }
 
 func (b *blockLinter) checkNopStmt(n *ir.NopStmt) {

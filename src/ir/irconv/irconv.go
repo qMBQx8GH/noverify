@@ -697,6 +697,17 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		if n == nil {
 			return (*ir.ClassConstFetchExpr)(nil)
 		}
+		if brackets, ok := n.Const.(*ast.ExprBrackets); ok {
+			// $Class::{$expr}, the name of the constant is a value of the expression.
+			dynamic := &ir.DynamicClassConstFetchExpr{}
+			dynamic.Position = n.Position
+			dynamic.DoubleColonTkn = n.DoubleColonTkn
+			dynamic.Class = c.convNode(n.Class)
+			dynamic.OpenCurlyBracketTkn = brackets.OpenParenthesisTkn
+			dynamic.Expr = c.convNode(brackets.Expr)
+			dynamic.CloseCurlyBracketTkn = brackets.CloseParenthesisTkn
+			return dynamic
+		}
 		out := &ir.ClassConstFetchExpr{}
 		out.Position = n.Position
 		out.DoubleColonTkn = n.DoubleColonTkn
@@ -2471,6 +2482,13 @@ func (c *Converter) convClass(n *ast.StmtClass) ir.Node {
 			CloseCurlyBracketTkn: n.CloseCurlyBracketTkn,
 			Position:             n.Position,
 			Class:                class,
+		}
+		if n.Modifiers != nil {
+			slice := make([]*ir.Identifier, len(n.Modifiers))
+			for i := range n.Modifiers {
+				slice[i] = c.convNode(n.Modifiers[i]).(*ir.Identifier)
+			}
+			out.Modifiers = slice
 		}
 		if n.Args != nil {
 			out.Args = c.convNodeSlice(n.Args)

@@ -118,6 +118,8 @@ func GetPosition(n Node) *position.Position {
 		return n.Position
 	case *DoStmt:
 		return n.Position
+	case *DynamicClassConstFetchExpr:
+		return n.Position
 	case *EchoStmt:
 		return n.Position
 	case *ElseIfStmt:

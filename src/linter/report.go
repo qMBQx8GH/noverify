@@ -292,6 +292,24 @@ return -9223372036854775808;`,
 		},
 
 		{
+			Name:     "classConstantType",
+			Default:  true,
+			Quickfix: false,
+			Comment:  `Report a class constant (PHP 8.3) with an invalid type or with a value of another type.`,
+			Before:   `const int LIMIT = "10"; // The value is a string.`,
+			After:    `const int LIMIT = 10;`,
+		},
+
+		{
+			Name:     "overrideAttribute",
+			Default:  true,
+			Quickfix: false,
+			Comment:  `Report #[\Override] on a method that does not override a method of a parent class or of an interface.`,
+			Before:   `#[\Override] public function typo() {} // The parent class has no method typo().`,
+			After:    `#[\Override] public function method() {}`,
+		},
+
+		{
 			Name:     "readonlyModification",
 			Default:  true,
 			Quickfix: false,
