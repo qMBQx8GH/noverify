@@ -92,7 +92,9 @@ func (r *rootChecker) CheckFunction(fun *ir.FunctionStmt) bool {
 
 func (r *rootChecker) CheckPropertyList(pl *ir.PropertyListStmt) bool {
 	accessImplicit := true
-	isStatic, isReadonly := false, false
+	isStatic := false
+	class := r.walker.getClass()
+	isReadonly := class.IsReadonly() // all properties of a readonly class are readonly
 
 	for _, m := range pl.Modifiers {
 		r.CheckModifierKeywordCase(m)

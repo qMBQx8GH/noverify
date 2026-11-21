@@ -2287,7 +2287,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out := &ir.Union{}
 
 		out.Position = n.Position
-		out.Types = c.convNodeSlice(n.Types)
+		out.Types = c.convUnionTypes(n.Types)
 		out.SeparatorTkns = n.SeparatorTkns
 		return out
 
@@ -2615,6 +2615,23 @@ func (c *Converter) convEnumCase(n *ast.EnumCase) ir.Node {
 			slice[i] = c.convNode(n.AttrGroups[i]).(*ir.AttributeGroup)
 		}
 		out.AttrGroups = slice
+	}
+	return out
+}
+
+// convUnionTypes converts the elements of a union type.
+//
+// Since PHP 8.2 an element can be an intersection type in parentheses (DNF types):
+// `(A&B)|null`. The linter has no intersection types and represents `A&B` as the
+// union `A|B`, so the parts of such an element are inlined: `(A&B)|null` is `A|B|null`.
+func (c *Converter) convUnionTypes(types []ast.Vertex) []ir.Node {
+	out := make([]ir.Node, 0, len(types))
+	for _, t := range types {
+		if inter, ok := t.(*ast.Intersection); ok && inter.OpenParenthesisTkn != nil {
+			out = append(out, c.convNodeSlice(inter.Types)...)
+			continue
+		}
+		out = append(out, c.convNode(t))
 	}
 	return out
 }

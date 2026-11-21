@@ -204,6 +204,8 @@ const (
 	ClassFinal
 	ClassShape
 	ClassInterface
+	// ClassReadonly is set for `readonly class` (PHP 8.2): all its properties are readonly.
+	ClassReadonly
 )
 
 type ClassInfo struct {
@@ -227,6 +229,7 @@ func (info *ClassInfo) IsAbstract() bool   { return info.Flags&ClassAbstract != 
 func (info *ClassInfo) IsFinal() bool      { return info.Flags&ClassFinal != 0 }
 func (info *ClassInfo) IsShape() bool      { return info.Flags&ClassShape != 0 }
 func (info *ClassInfo) IsInterface() bool  { return info.Flags&ClassInterface != 0 }
+func (info *ClassInfo) IsReadonly() bool   { return info.Flags&ClassReadonly != 0 }
 func (info *ClassInfo) IsDeprecated() bool { return info.Deprecated }
 
 // TODO: rename it; it's not only class-related.

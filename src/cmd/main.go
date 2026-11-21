@@ -105,7 +105,7 @@ func Run(cfg *MainConfig) (int, error) {
 
 	config := cfg.LinterConfig
 	if config == nil {
-		config = linter.NewConfig("8.1")
+		config = linter.NewConfig("8.2")
 		cfg.LinterConfig = config
 	}
 

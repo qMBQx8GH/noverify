@@ -55,7 +55,8 @@ import (
 //	56 - added isVariadic to meta.FuncInfo
 //	57 - added DeprecationInfo for property and const
 //	58 - added support for PHP 8.1 enums (enum cases are indexed as class constants)
-const cacheVersion = 58
+//	59 - added the ClassReadonly flag (PHP 8.2 readonly classes)
+const cacheVersion = 59
 
 var (
 	errWrongVersion = errors.New("Wrong cache version")

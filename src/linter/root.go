@@ -818,6 +818,8 @@ func (d *rootWalker) getClassModifiers(n *ir.ClassStmt) meta.ClassFlags {
 			classFlags |= meta.ClassAbstract
 		case strings.EqualFold("final", m.Value):
 			classFlags |= meta.ClassFinal
+		case strings.EqualFold("readonly", m.Value):
+			classFlags |= meta.ClassReadonly
 		}
 	}
 	return classFlags
@@ -937,7 +939,7 @@ func (d *rootWalker) enterPropertyList(pl *ir.PropertyListStmt) bool {
 	cl := d.getClass()
 
 	isStatic := false
-	isReadonly := false
+	isReadonly := cl.IsReadonly() // all properties of a readonly class are readonly
 	accessLevel := meta.Public
 
 	for _, m := range pl.Modifiers {
@@ -1247,6 +1249,9 @@ func (d *rootWalker) enterClassMethod(meth *ir.ClassMethodStmt) bool {
 func (d *rootWalker) handlePropertyPromotion(param *ir.Parameter, doc phpdoctypes.ParseResult, class meta.ClassInfo) {
 	var accessLevel meta.AccessLevel
 	var flags meta.PropertyFlags
+	if class.IsReadonly() { // all properties of a readonly class are readonly
+		flags |= meta.PropReadonly
+	}
 	for _, m := range param.Modifiers {
 		d.checker.CheckModifierKeywordCase(m)
 		switch strings.ToLower(m.Value) {
