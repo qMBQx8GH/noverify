@@ -1027,6 +1027,9 @@ func GetFirstToken(n Node) *token.Token {
 		if len(n.SeparatorTkns) != 0 {
 			return n.SeparatorTkns[0]
 		}
+		if n.EllipsisTkn != nil {
+			return n.EllipsisTkn
+		}
 		if n.CloseParenthesisTkn != nil {
 			return n.CloseParenthesisTkn
 		}
@@ -1444,6 +1447,9 @@ func GetFirstToken(n Node) *token.Token {
 		if len(n.SeparatorTkns) != 0 {
 			return n.SeparatorTkns[0]
 		}
+		if n.EllipsisTkn != nil {
+			return n.EllipsisTkn
+		}
 		if n.CloseParenthesisTkn != nil {
 			return n.CloseParenthesisTkn
 		}
@@ -1580,6 +1586,9 @@ func GetFirstToken(n Node) *token.Token {
 		}
 		if len(n.SeparatorTkns) != 0 {
 			return n.SeparatorTkns[0]
+		}
+		if n.EllipsisTkn != nil {
+			return n.EllipsisTkn
 		}
 		if n.CloseParenthesisTkn != nil {
 			return n.CloseParenthesisTkn
@@ -1866,6 +1875,9 @@ func GetFirstToken(n Node) *token.Token {
 		}
 		if len(n.SeparatorTkns) != 0 {
 			return n.SeparatorTkns[0]
+		}
+		if n.EllipsisTkn != nil {
+			return n.EllipsisTkn
 		}
 		if n.CloseParenthesisTkn != nil {
 			return n.CloseParenthesisTkn

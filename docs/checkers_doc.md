@@ -4,7 +4,7 @@
 
 | Total checks | Checks enabled by default | Disabled checks by default | Autofixable checks |
 | ------------ | ------------------------- | -------------------------- | ------------------ |
-| 119           | 102                        | 17                         | 15                 |
+| 121           | 104                        | 17                         | 15                 |
 
 ## Table of contents
  - Enabled by default
@@ -81,6 +81,8 @@
    - [`phpAliases` checker (autofixable)](#phpaliases-checker)
    - [`precedence` checker](#precedence-checker)
    - [`printf` checker](#printf-checker)
+   - [`readonlyDeclaration` checker](#readonlydeclaration-checker)
+   - [`readonlyModification` checker](#readonlymodification-checker)
    - [`redundantGlobal` checker](#redundantglobal-checker)
    - [`regexpSimplify` checker](#regexpsimplify-checker)
    - [`regexpSyntax` checker](#regexpsyntax-checker)
@@ -1701,6 +1703,42 @@ sprintf("id=%d") // Lost argument for '%d' specifier.
 #### Compliant code:
 ```php
 sprintf("id=%d", $id)
+```
+<p><br></p>
+
+
+### `readonlyDeclaration` checker
+
+#### Description
+
+Report invalid declarations of readonly properties (PHP 8.1).
+
+#### Non-compliant code:
+```php
+public readonly $x; // A readonly property must have a type.
+```
+
+#### Compliant code:
+```php
+public readonly int $x;
+```
+<p><br></p>
+
+
+### `readonlyModification` checker
+
+#### Description
+
+Report modifications of readonly properties (PHP 8.1) that are not allowed.
+
+#### Non-compliant code:
+```php
+$point->x = 10; // $x is declared as readonly.
+```
+
+#### Compliant code:
+```php
+$point = new Point(10, $point->y);
 ```
 <p><br></p>
 

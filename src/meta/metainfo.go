@@ -23,6 +23,8 @@ type PropertyFlags uint8
 const (
 	// PropFromAnnotation is set if the property is described in the class annotation.
 	PropFromAnnotation PropertyFlags = 1 << iota
+	// PropReadonly is set if the property is declared with the `readonly` modifier (PHP 8.1).
+	PropReadonly
 )
 
 type PackageInfo struct {
@@ -182,6 +184,7 @@ type PropertyInfo struct {
 }
 
 func (info *PropertyInfo) IsFromAnnotation() bool { return info.Flags&PropFromAnnotation != 0 }
+func (info *PropertyInfo) IsReadonly() bool       { return info.Flags&PropReadonly != 0 }
 func (info *PropertyInfo) IsDeprecated() bool     { return info.Deprecated }
 
 type ConstInfo struct {

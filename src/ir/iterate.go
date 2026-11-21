@@ -759,6 +759,9 @@ func (n *FunctionCallExpr) IterateTokens(cb func(*token.Token) bool) {
 			return
 		}
 	}
+	if !traverseToken(n.EllipsisTkn, cb) {
+		return
+	}
 	if !traverseToken(n.CloseParenthesisTkn, cb) {
 		return
 	}
@@ -1083,6 +1086,9 @@ func (n *MethodCallExpr) IterateTokens(cb func(*token.Token) bool) {
 			return
 		}
 	}
+	if !traverseToken(n.EllipsisTkn, cb) {
+		return
+	}
 	if !traverseToken(n.CloseParenthesisTkn, cb) {
 		return
 	}
@@ -1185,6 +1191,9 @@ func (n *NullsafeMethodCallExpr) IterateTokens(cb func(*token.Token) bool) {
 		if !traverseToken(tk, cb) {
 			return
 		}
+	}
+	if !traverseToken(n.EllipsisTkn, cb) {
+		return
 	}
 	if !traverseToken(n.CloseParenthesisTkn, cb) {
 		return
@@ -1381,6 +1390,9 @@ func (n *StaticCallExpr) IterateTokens(cb func(*token.Token) bool) {
 		if !traverseToken(tk, cb) {
 			return
 		}
+	}
+	if !traverseToken(n.EllipsisTkn, cb) {
+		return
 	}
 	if !traverseToken(n.CloseParenthesisTkn, cb) {
 		return

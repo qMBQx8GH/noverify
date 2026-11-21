@@ -3,6 +3,7 @@ package irconv
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/VKCOM/php-parser/pkg/ast"
 	"github.com/VKCOM/php-parser/pkg/position"
@@ -849,6 +850,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out := &ir.FunctionCallExpr{}
 		out.Position = n.Position
 		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.EllipsisTkn = n.EllipsisTkn
 		out.SeparatorTkns = n.SeparatorTkns
 		out.CloseParenthesisTkn = n.CloseParenthesisTkn
 		out.Function = c.convNode(n.Function)
@@ -912,6 +914,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
 		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
 		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.EllipsisTkn = n.EllipsisTkn
 		out.Variable = c.convNode(n.Var)
 		out.Method = c.convNode(n.Method)
 		out.Args = c.convNodeSlice(n.Args)
@@ -927,6 +930,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
 		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
 		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.EllipsisTkn = n.EllipsisTkn
 		out.Variable = c.convNode(n.Var)
 		out.Method = c.convNode(n.Method)
 		out.Args = c.convNodeSlice(n.Args)
@@ -1070,6 +1074,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
 		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
 		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.EllipsisTkn = n.EllipsisTkn
 		out.SeparatorTkns = n.SeparatorTkns
 		out.CloseParenthesisTkn = n.CloseParenthesisTkn
 
@@ -2320,8 +2325,17 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.CloseAttributeTkn = n.CloseAttributeTkn
 		return out
 
-	case *ast.StmtEnum, *ast.EnumCase:
-		return &ir.NopStmt{}
+	case *ast.StmtEnum:
+		if n == nil {
+			return (*ir.ClassStmt)(nil)
+		}
+		return c.convEnum(n)
+
+	case *ast.EnumCase:
+		if n == nil {
+			return (*ir.ClassConstListStmt)(nil)
+		}
+		return c.convEnumCase(n)
 	}
 
 	panic(fmt.Sprintf("unhandled type %T", n))
@@ -2476,6 +2490,118 @@ func (c *Converter) convClass(n *ast.StmtClass) ir.Node {
 	}
 
 	out.Doc = c.getPHPDoc(ir.GetFirstToken(out))
+	return out
+}
+
+// convEnum converts a PHP 8.1 enum into a final class.
+//
+// Enum cases become class constants whose value is an instance of the enum
+// (so `Suit::Hearts` has type `Suit`), and the members every enum has
+// (`name`, `value`, `cases()`, `from()` and `tryFrom()`) are described
+// with a synthetic PHPDoc, as if they were magic members.
+func (c *Converter) convEnum(n *ast.StmtEnum) ir.Node {
+	class := ir.Class{
+		Stmts: c.convNodeSlice(n.Stmts),
+	}
+
+	implements := c.convNodeSlice(n.Implements)
+	if len(implements) != 0 {
+		class.Implements = &ir.ClassImplementsStmt{
+			Position:                c.convertSliceNodeToPosition(n.Implements),
+			ImplementsTkn:           n.ImplementsTkn,
+			ImplementsSeparatorTkns: n.ImplementsSeparatorTkns,
+			InterfaceNames:          implements,
+		}
+	}
+
+	out := &ir.ClassStmt{
+		ClassTkn:             n.EnumTkn,
+		OpenCurlyBracketTkn:  n.OpenCurlyBracketTkn,
+		CloseCurlyBracketTkn: n.CloseCurlyBracketTkn,
+		Position:             n.Position,
+		Class:                class,
+		ClassName:            c.convNode(n.Name).(*ir.Identifier),
+		Modifiers:            []*ir.Identifier{{Position: n.Position, Value: "final"}},
+	}
+	if n.AttrGroups != nil {
+		slice := make([]*ir.AttributeGroup, len(n.AttrGroups))
+		for i := range n.AttrGroups {
+			slice[i] = c.convNode(n.AttrGroups[i]).(*ir.AttributeGroup)
+		}
+		out.AttrGroups = slice
+	}
+
+	userDoc := c.getPHPDoc(ir.GetFirstToken(out))
+	out.Doc = c.parsePHPDoc(enumPHPDoc(userDoc.Raw, c.enumBackingType(n)))
+	return out
+}
+
+// enumBackingType returns the backing type of the enum ("int" or "string")
+// or an empty string for a pure enum.
+func (c *Converter) enumBackingType(n *ast.StmtEnum) string {
+	switch t := n.Type.(type) {
+	case *ast.Identifier:
+		return strings.ToLower(string(t.Value))
+	case *ast.Name:
+		return strings.ToLower(namePartsToString(t.Parts))
+	}
+	return ""
+}
+
+func enumPHPDoc(userDoc, backingType string) string {
+	lines := []string{"@property-read string $name"}
+	lines = append(lines, "@method static self[] cases()")
+	if backingType != "" {
+		lines = append(lines,
+			"@property-read "+backingType+" $value",
+			"@method static self from("+backingType+" $value)",
+			"@method static self|null tryFrom("+backingType+" $value)",
+		)
+	}
+
+	var sb strings.Builder
+	sb.WriteString("/**\n")
+	if userDoc != "" {
+		body := strings.TrimSpace(userDoc)
+		body = strings.TrimPrefix(body, "/**")
+		body = strings.TrimSuffix(body, "*/")
+		sb.WriteString(strings.TrimRight(body, " \t\r\n"))
+		sb.WriteString("\n")
+	}
+	for _, l := range lines {
+		sb.WriteString(" * " + l + "\n")
+	}
+	sb.WriteString(" */")
+	return sb.String()
+}
+
+// convEnumCase converts `case Name = expr;` into `const Name = new self;`.
+func (c *Converter) convEnumCase(n *ast.EnumCase) ir.Node {
+	name := c.convNode(n.Name).(*ir.Identifier)
+	pos := n.Position
+
+	constStmt := &ir.ConstantStmt{
+		Position:     pos,
+		ConstantName: name,
+		Expr: &ir.NewExpr{
+			Position: pos,
+			Class:    &ir.Name{Position: pos, Value: "self"},
+		},
+	}
+
+	out := &ir.ClassConstListStmt{
+		Position:     pos,
+		ConstTkn:     n.CaseTkn,
+		Consts:       []ir.Node{constStmt},
+		SemiColonTkn: n.SemiColonTkn,
+	}
+	if n.AttrGroups != nil {
+		slice := make([]*ir.AttributeGroup, len(n.AttrGroups))
+		for i := range n.AttrGroups {
+			slice[i] = c.convNode(n.AttrGroups[i]).(*ir.AttributeGroup)
+		}
+		out.AttrGroups = slice
+	}
 	return out
 }
 

@@ -292,6 +292,24 @@ return -9223372036854775808;`,
 		},
 
 		{
+			Name:     "readonlyModification",
+			Default:  true,
+			Quickfix: false,
+			Comment:  `Report modifications of readonly properties (PHP 8.1) that are not allowed.`,
+			Before:   `$point->x = 10; // $x is declared as readonly.`,
+			After:    `$point = new Point(10, $point->y);`,
+		},
+
+		{
+			Name:     "readonlyDeclaration",
+			Default:  true,
+			Quickfix: false,
+			Comment:  `Report invalid declarations of readonly properties (PHP 8.1).`,
+			Before:   `public readonly $x; // A readonly property must have a type.`,
+			After:    `public readonly int $x;`,
+		},
+
+		{
 			Name:     "argCount",
 			Default:  true,
 			Quickfix: false,

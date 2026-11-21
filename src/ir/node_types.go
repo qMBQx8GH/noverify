@@ -551,6 +551,7 @@ type FunctionCallExpr struct {
 	OpenParenthesisTkn  *token.Token
 	Args                []Node
 	SeparatorTkns       []*token.Token
+	EllipsisTkn         *token.Token // non-nil for the first-class callable syntax `f(...)`
 	CloseParenthesisTkn *token.Token
 }
 
@@ -606,6 +607,7 @@ type MethodCallExpr struct {
 	OpenParenthesisTkn   *token.Token
 	Args                 []Node
 	SeparatorTkns        []*token.Token
+	EllipsisTkn          *token.Token // non-nil for the first-class callable syntax `f(...)`
 	CloseParenthesisTkn  *token.Token
 }
 
@@ -700,6 +702,7 @@ type StaticCallExpr struct {
 	OpenParenthesisTkn   *token.Token
 	Args                 []Node
 	SeparatorTkns        []*token.Token
+	EllipsisTkn          *token.Token // non-nil for the first-class callable syntax `f(...)`
 	CloseParenthesisTkn  *token.Token
 }
 
@@ -1550,6 +1553,7 @@ type NullsafeMethodCallExpr struct {
 	OpenParenthesisTkn   *token.Token
 	Args                 []Node
 	SeparatorTkns        []*token.Token
+	EllipsisTkn          *token.Token // non-nil for the first-class callable syntax `f(...)`
 	CloseParenthesisTkn  *token.Token
 }
 

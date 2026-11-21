@@ -30,6 +30,49 @@ func (b *blockLinter) enterNode(n ir.Node) {
 
 	case *ir.Assign:
 		b.checkAssign(n)
+		b.checkReadonlyWrite(n.Variable, true)
+
+	case *ir.AssignReference:
+		b.checkReadonlyWrite(n.Variable, false)
+
+	case *ir.AssignPlus:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignMinus:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignMul:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignDiv:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignMod:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignPow:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignConcat:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignCoalesce:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignBitwiseAnd:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignBitwiseOr:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignBitwiseXor:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignShiftLeft:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.AssignShiftRight:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.PostIncExpr:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.PostDecExpr:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.PreIncExpr:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.PreDecExpr:
+		b.checkReadonlyWrite(n.Variable, false)
+	case *ir.UnsetStmt:
+		for _, v := range n.Vars {
+			b.checkReadonlyWrite(v, false)
+		}
 
 	case *ir.ArrayExpr:
 		b.checkArray(n)
@@ -334,6 +377,41 @@ func (b *blockLinter) checkTypeCaseExpr(n *ir.TypeCastExpr) {
 
 func (b *blockLinter) report(n ir.Node, level int, checkName, msg string, args ...interface{}) {
 	b.walker.report(n, level, checkName, msg, args...)
+}
+
+// checkReadonlyWrite reports a modification of a readonly property (PHP 8.1).
+//
+// A plain assignment (canInitialize) to a property is allowed from the scope of the
+// declaring class since it can be the initialization; without flow analysis we can't
+// tell it from a second write, so it is reported only from outside of the class.
+// Any other modification (compound assignment, ++/--, unset, reference, array
+// element write) is always an error.
+func (b *blockLinter) checkReadonlyWrite(target ir.Node, canInitialize bool) {
+	for {
+		dim, ok := target.(*ir.ArrayDimFetchExpr)
+		if !ok {
+			break
+		}
+		target = dim.Variable
+		canInitialize = false
+	}
+
+	e, ok := target.(*ir.PropertyFetchExpr)
+	if !ok {
+		return
+	}
+
+	fetch := resolvePropertyFetch(b.walker.ctx.sc, b.classParseState(), b.walker.ctx.customTypes, e, b.walker.r.strictMixed)
+	if !fetch.canAnalyze || !fetch.isFound || fetch.isMagic || !fetch.info.IsReadonly() {
+		return
+	}
+
+	if canInitialize && b.walker.r.ctx.st.CurrentClass == fetch.className {
+		return
+	}
+
+	b.report(e, LevelError, "readonlyModification", "Cannot modify readonly property %s::$%s",
+		fetch.className, fetch.propertyNode.Value)
 }
 
 func (b *blockLinter) checkNopStmt(n *ir.NopStmt) {
@@ -1123,7 +1201,9 @@ func (b *blockLinter) checkFunctionCall(e *ir.FunctionCallExpr) {
 	}
 
 	if call.isFound {
-		b.checkCallArgs(e.Function, e.Args, call.info, "")
+		if e.EllipsisTkn == nil { // `f(...)` creates a callable, it is not a call.
+			b.checkCallArgs(e.Function, e.Args, call.info, "")
+		}
 		b.checkDeprecatedFunctionCall(e, &call)
 	}
 
@@ -1339,7 +1419,7 @@ func (b *blockLinter) checkMethodCall(e *ir.MethodCallExpr) {
 
 	b.checkMethodCallPackage(call.className, call.info, e)
 
-	if !call.isMagic {
+	if !call.isMagic && e.EllipsisTkn == nil {
 		b.checkCallArgs(e.Method, e.Args, call.info, call.methodCallerType.String())
 	}
 
@@ -1452,7 +1532,7 @@ func (b *blockLinter) checkStaticCall(e *ir.StaticCallExpr) {
 
 	b.checkClassSpecialNameCase(e, call.className)
 
-	if !call.isMagic {
+	if !call.isMagic && e.EllipsisTkn == nil {
 		b.checkCallArgs(e.Call, e.Args, call.methodInfo.Info, call.className)
 	}
 

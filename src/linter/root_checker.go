@@ -92,6 +92,7 @@ func (r *rootChecker) CheckFunction(fun *ir.FunctionStmt) bool {
 
 func (r *rootChecker) CheckPropertyList(pl *ir.PropertyListStmt) bool {
 	accessImplicit := true
+	isStatic, isReadonly := false, false
 
 	for _, m := range pl.Modifiers {
 		r.CheckModifierKeywordCase(m)
@@ -99,7 +100,15 @@ func (r *rootChecker) CheckPropertyList(pl *ir.PropertyListStmt) bool {
 		switch strings.ToLower(m.Value) {
 		case "public", "protected", "private":
 			accessImplicit = false
+		case "static":
+			isStatic = true
+		case "readonly":
+			isReadonly = true
 		}
+	}
+
+	if isReadonly {
+		r.walker.checkReadonlyPropertyList(pl, isStatic)
 	}
 
 	if accessImplicit {

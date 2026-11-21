@@ -299,7 +299,7 @@ func NodeClone(x ir.Node) ir.Node {
 		clone := *x
 		clone.Types = NodeSliceClone(x.Types)
 		if x.Variable != nil {
-			clone.Variable = NodeClone(x.Variable).(*ir.SimpleVar)
+			clone.Variable = NodeClone(x.Variable)
 		}
 		clone.Stmts = NodeSliceClone(x.Stmts)
 		return &clone

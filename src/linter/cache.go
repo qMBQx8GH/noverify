@@ -54,7 +54,8 @@ import (
 //	55 - updated go version 1.16 -> 1.21
 //	56 - added isVariadic to meta.FuncInfo
 //	57 - added DeprecationInfo for property and const
-const cacheVersion = 57
+//	58 - added support for PHP 8.1 enums (enum cases are indexed as class constants)
+const cacheVersion = 58
 
 var (
 	errWrongVersion = errors.New("Wrong cache version")

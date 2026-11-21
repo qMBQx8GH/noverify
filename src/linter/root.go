@@ -937,6 +937,7 @@ func (d *rootWalker) enterPropertyList(pl *ir.PropertyListStmt) bool {
 	cl := d.getClass()
 
 	isStatic := false
+	isReadonly := false
 	accessLevel := meta.Public
 
 	for _, m := range pl.Modifiers {
@@ -949,7 +950,14 @@ func (d *rootWalker) enterPropertyList(pl *ir.PropertyListStmt) bool {
 			accessLevel = meta.Private
 		case "static":
 			isStatic = true
+		case "readonly":
+			isReadonly = true
 		}
+	}
+
+	var flags meta.PropertyFlags
+	if isReadonly {
+		flags |= meta.PropReadonly
 	}
 
 	varPhpDocRes := d.parseVarPHPDoc(pl.Doc)
@@ -983,11 +991,27 @@ func (d *rootWalker) enterPropertyList(pl *ir.PropertyListStmt) bool {
 			Pos:             d.getElementPos(prop),
 			Typ:             propTypes.Immutable(),
 			AccessLevel:     accessLevel,
+			Flags:           flags,
 			DeprecationInfo: varPhpDocRes.deprecation,
 		}
 	}
 
 	return true
+}
+
+// checkReadonlyPropertyList reports the declarations that PHP 8.1 rejects at compile time.
+func (d *rootWalker) checkReadonlyPropertyList(pl *ir.PropertyListStmt, isStatic bool) {
+	if pl.Type == nil {
+		d.Report(pl, LevelError, "readonlyDeclaration", "Readonly property must have a type")
+	}
+	if isStatic {
+		d.Report(pl, LevelError, "readonlyDeclaration", "Static property cannot be readonly")
+	}
+	for _, pNode := range pl.Properties {
+		if prop := pNode.(*ir.PropertyStmt); prop.Expr != nil {
+			d.Report(prop, LevelError, "readonlyDeclaration", "Readonly property $%s cannot have a default value", prop.Variable.Name)
+		}
+	}
 }
 
 func (d *rootWalker) parseConstPHPDoc(doc phpdoc.Comment) (deprecationInfo meta.DeprecationInfo) {
@@ -1222,6 +1246,7 @@ func (d *rootWalker) enterClassMethod(meth *ir.ClassMethodStmt) bool {
 
 func (d *rootWalker) handlePropertyPromotion(param *ir.Parameter, doc phpdoctypes.ParseResult, class meta.ClassInfo) {
 	var accessLevel meta.AccessLevel
+	var flags meta.PropertyFlags
 	for _, m := range param.Modifiers {
 		d.checker.CheckModifierKeywordCase(m)
 		switch strings.ToLower(m.Value) {
@@ -1231,7 +1256,12 @@ func (d *rootWalker) handlePropertyPromotion(param *ir.Parameter, doc phpdoctype
 			accessLevel = meta.Protected
 		case "private":
 			accessLevel = meta.Private
+		case "readonly":
+			flags |= meta.PropReadonly
 		}
+	}
+	if flags&meta.PropReadonly != 0 && param.VariableType == nil {
+		d.Report(param, LevelError, "readonlyDeclaration", "Readonly property $%s must have a type", param.Variable.Name)
 	}
 
 	var propType types.Map
@@ -1253,6 +1283,7 @@ func (d *rootWalker) handlePropertyPromotion(param *ir.Parameter, doc phpdoctype
 		Pos:         d.getElementPos(param),
 		Typ:         propType.Immutable(),
 		AccessLevel: accessLevel,
+		Flags:       flags,
 	}
 }
 
