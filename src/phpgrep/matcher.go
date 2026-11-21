@@ -774,6 +774,15 @@ func (m *matcher) eqNode(state *matcherState, x, y ir.Node) bool {
 			m.eqNodeWithCase(state, x.Method, y.Method) &&
 			m.eqNodeSlice(state, x.Args, y.Args)
 
+	case *ir.NullsafePropertyFetchExpr:
+		y, ok := y.(*ir.NullsafePropertyFetchExpr)
+		return ok && m.eqNode(state, x.Variable, y.Variable) && m.eqNode(state, x.Property, y.Property)
+	case *ir.NullsafeMethodCallExpr:
+		y, ok := y.(*ir.NullsafeMethodCallExpr)
+		return ok && m.eqNode(state, x.Variable, y.Variable) &&
+			m.eqNodeWithCase(state, x.Method, y.Method) &&
+			m.eqNodeSlice(state, x.Args, y.Args)
+
 	case *ir.TypeCastExpr:
 		y, ok := y.(*ir.TypeCastExpr)
 		return ok && x.Type == y.Type && m.eqNode(state, x.Expr, y.Expr)
