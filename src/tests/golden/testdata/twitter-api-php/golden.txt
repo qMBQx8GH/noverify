@@ -28,9 +28,6 @@ WARNING notSafeCall: potentially not safe call in function rawurlencode signatur
 WARNING notSafeCall: potentially not safe call in function rawurlencode signature of param string at testdata/twitter-api-php/TwitterAPIExchange.php:253
         $composite_key = rawurlencode($consumer_secret) . '&' . rawurlencode($oauth_access_token_secret);
                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^
-WARNING notSafeCall: potentially not safe call in function base64_encode signature of param string when calling function \hash_hmac at testdata/twitter-api-php/TwitterAPIExchange.php:254
-        $oauth_signature = base64_encode(hash_hmac('sha1', $base_info, $composite_key, true));
-                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 MAYBE   invalidDocblockType: Use bool type instead of boolean at testdata/twitter-api-php/TwitterAPIExchange.php:267
      * @param boolean $return      If true, returns data. This is left in for backward compatibility reasons
               ^^^^^^^

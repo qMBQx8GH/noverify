@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/VKCOM/php-parser/pkg/version"
+
 	"github.com/VKCOM/noverify/src/constfold"
 	"github.com/VKCOM/noverify/src/ir"
 	"github.com/VKCOM/noverify/src/ir/irutil"
@@ -641,7 +643,7 @@ func (b *blockLinter) checkNew(e *ir.NewExpr) {
 			b.report(e.Class, LevelError, "invalidNew", "Cannot instantiate interface %s", class.Name)
 		}
 
-		if class.IsDeprecated() {
+		if class.IsDeprecated() && b.deprecationApplies(class.DeprecationInfo) {
 			if class.WithDeprecationNote() {
 				b.report(e, LevelNotice, "deprecated", "Try to create instance of the class %s that was marked as deprecated (%s)", class.Name, class.DeprecationInfo)
 			} else {
@@ -1109,8 +1111,32 @@ func (b *blockLinter) checkMultilineArrayTrailingComma(item *ir.ArrayItemExpr) {
 	}
 }
 
+// deprecationApplies reports whether the deprecation is in force in the PHP version
+// the code is analyzed for.
+//
+// The stubs describe the latest PHP, so a function that is deprecated since 8.5
+// is not deprecated yet in 8.2. If the version of the deprecation is unknown
+// (or can't be parsed), the deprecation always applies.
+func (b *blockLinter) deprecationApplies(info meta.DeprecationInfo) bool {
+	if info.Since == "" {
+		return true
+	}
+
+	phpVersion := b.walker.r.config.PhpVersion
+	if phpVersion == nil {
+		return true
+	}
+
+	since, err := version.New(info.Since)
+	if err != nil {
+		return true
+	}
+
+	return phpVersion.GreaterOrEqual(since)
+}
+
 func (b *blockLinter) checkDeprecatedFunctionCall(e *ir.FunctionCallExpr, call *funcCallInfo) {
-	if !call.info.Deprecated {
+	if !call.info.Deprecated || !b.deprecationApplies(call.info.DeprecationInfo) {
 		return
 	}
 
@@ -1466,7 +1492,7 @@ func (b *blockLinter) checkMethodCall(e *ir.MethodCallExpr) {
 		}
 	}
 
-	if call.info.Deprecated {
+	if call.info.Deprecated && b.deprecationApplies(call.info.DeprecationInfo) {
 		deprecation := call.info.DeprecationInfo
 
 		if deprecation.WithDeprecationNote() {
@@ -1544,7 +1570,7 @@ func (b *blockLinter) checkStaticCall(e *ir.StaticCallExpr) {
 		b.report(e.Call, LevelWarning, "callStatic", "Calling instance method as static method")
 	}
 
-	if call.methodInfo.Info.Deprecated {
+	if call.methodInfo.Info.Deprecated && b.deprecationApplies(call.methodInfo.Info.DeprecationInfo) {
 		deprecation := call.methodInfo.Info.DeprecationInfo
 
 		if deprecation.WithDeprecationNote() {
@@ -1611,7 +1637,7 @@ func (b *blockLinter) checkPropertyFetch(e *ir.PropertyFetchExpr) {
 		b.report(e.Property, LevelError, "accessLevel", "Cannot access %s property %s->%s", fetch.info.AccessLevel, fetch.className, fetch.propertyNode.Value)
 	}
 
-	if fetch.info.IsDeprecated() {
+	if fetch.info.IsDeprecated() && b.deprecationApplies(fetch.info.DeprecationInfo) {
 		if fetch.info.WithDeprecationNote() {
 			b.report(e, LevelNotice, "deprecated", "Try to call property %s that was marked as deprecated (%s) in the class %s", fetch.propertyNode.Value, fetch.info.DeprecationInfo, fetch.className)
 		} else {
@@ -1687,7 +1713,7 @@ func (b *blockLinter) checkClassConstFetch(e *ir.ClassConstFetchExpr) {
 		b.report(e.ConstantName, LevelError, "accessLevel", "Cannot access %s constant %s::%s", fetch.info.AccessLevel, fetch.implClassName, fetch.constName)
 	}
 
-	if fetch.info.IsDeprecated() {
+	if fetch.info.IsDeprecated() && b.deprecationApplies(fetch.info.DeprecationInfo) {
 		if fetch.info.WithDeprecationNote() {
 			b.report(e, LevelNotice, "deprecated", "Try to call constant %s that was marked as deprecated (%s) from the class %s", fetch.constName, fetch.info.DeprecationInfo, fetch.className)
 		} else {

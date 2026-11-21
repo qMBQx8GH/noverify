@@ -322,9 +322,6 @@ WARNING notSafeCall: potentially not safe accessing property 'baseDir' at testda
 WARNING notSafeCall: potentially not safe accessing property 'baseDir' at testdata/mustache/src/Mustache/Loader/FilesystemLoader.php:133
         return strpos($this->baseDir, '://') === false || strpos($this->baseDir, 'file://') === 0;
                                                                  ^^^^^^^^^^^^^^
-WARNING notNullSafetyFunctionArgumentConstFetch: null passed to non-nullable parameter context in function file_get_contents at testdata/mustache/src/Mustache/Loader/InlineLoader.php:114
-            $data = file_get_contents($this->fileName, false, null, $this->offset);
-                                                              ^^^^
 WARNING notSafeCall: potentially not safe call in function preg_split signature of param subject at testdata/mustache/src/Mustache/Loader/InlineLoader.php:115
             foreach (preg_split("/^@@(?= [\w\d\.]+$)/m", $data, -1) as $chunk) {
                                                          ^^^^^
@@ -406,6 +403,12 @@ WARNING notSafeCall: potentially not safe call in function trim signature of par
 WARNING notSafeCall: potentially not safe call in function substr signature of param offset at testdata/mustache/src/Mustache/Tokenizer.php:283
             $this->setDelimiters(trim(substr($text, $startIndex, $closeIndex - $startIndex)));
                                                     ^^^^^^^^^^^
+WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function strlen signature of param string at testdata/mustache/src/Mustache/Tokenizer.php:310
+        $this->otagLen  = strlen($otag);
+                                 ^^^^^
+WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function strlen signature of param string at testdata/mustache/src/Mustache/Tokenizer.php:314
+        $this->ctagLen  = strlen($ctag);
+                                 ^^^^^
 WARNING notSafeCall: potentially not safe accessing property 'ctag' at testdata/mustache/src/Mustache/Tokenizer.php:330
         $end    = strpos($text, $this->ctag, $index);
                                 ^^^^^^^^^^^

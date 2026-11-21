@@ -4,9 +4,6 @@ WARNING useSleep: Don't use the 'sleep' function at testdata/phprocksyd/Phprocks
 WARNING useSleep: Don't use the 'sleep' function at testdata/phprocksyd/Phprocksyd.php:18
         sleep(100);
         ^^^^^^^^^^
-MAYBE   deprecated: Call to deprecated function dl (since: 5.3) at testdata/phprocksyd/Phprocksyd.php:73
-            if (!extension_loaded($ext) && !dl($ext . '.so')) {
-                                            ^^
 WARNING useExitOrDie: Don't use the 'exit' function at testdata/phprocksyd/Phprocksyd.php:75
                 exit(1);
                 ^^^^^^^
@@ -142,9 +139,6 @@ WARNING notSafeCall: potentially not safe call in function stream_set_timeout si
 WARNING useExitOrDie: Don't use the 'exit' function at testdata/phprocksyd/Phprocksyd.php:590
             exit(0);
             ^^^^^^^
-WARNING notSafeCall: potentially not safe call in function readdir signature of param dir_handle at testdata/phprocksyd/Phprocksyd.php:598
-        while (false !== ($file = readdir($dh))) {
-                                          ^^^
 WARNING notSafeCall: potentially not safe call in function fclose signature of param stream when calling function \fopen at testdata/phprocksyd/Phprocksyd.php:605
                 fclose(fopen("php://fd/" . $fd, 'r+'));
                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

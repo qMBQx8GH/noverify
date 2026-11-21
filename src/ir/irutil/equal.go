@@ -482,6 +482,9 @@ func NodeEqual(x, y ir.Node) bool {
 				return false
 			}
 		}
+		if !NodeEqual(x.Type, y.Type) {
+			return false
+		}
 		if !NodeSliceEqual(x.Consts, y.Consts) {
 			return false
 		}

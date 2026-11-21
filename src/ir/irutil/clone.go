@@ -328,6 +328,9 @@ func NodeClone(x ir.Node) ir.Node {
 			}
 			clone.Modifiers = sliceClone
 		}
+		if x.Type != nil {
+			clone.Type = NodeClone(x.Type)
+		}
 		clone.Consts = NodeSliceClone(x.Consts)
 		return &clone
 	case *ir.ClassExtendsStmt:

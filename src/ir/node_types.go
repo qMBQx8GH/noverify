@@ -960,14 +960,16 @@ type ClassStmt struct {
 	Class
 }
 
-// ClassConstListStmt is a `#[$AttrGroups] $Modifiers... const $Consts...` statement.
+// ClassConstListStmt is a `#[$AttrGroups] $Modifiers... const $Type $Consts...` statement.
 // $Modifiers may specify the constant access level.
+// $Type is the type of the constants (PHP 8.3), it is nil for an untyped constant.
 // Every element in $Consts is a *ConstantStmt.
 type ClassConstListStmt struct {
 	Position      *position.Position
 	AttrGroups    []*AttributeGroup
 	Modifiers     []*Identifier
 	ConstTkn      *token.Token
+	Type          Node
 	Consts        []Node
 	SeparatorTkns []*token.Token
 	SemiColonTkn  *token.Token

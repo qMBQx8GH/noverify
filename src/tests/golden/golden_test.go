@@ -42,6 +42,7 @@ func TestGolden(t *testing.T) {
 				"phpAliases",
 			},
 			Deps: []string{
+				`stubs/phpstorm-stubs/random/random.php`, // rand(), mt_rand(), srand() since PHP 8.2
 				`stubs/phpstorm-stubs/pcre/pcre.php`,
 			},
 		},
@@ -107,6 +108,7 @@ func TestGolden(t *testing.T) {
 			Name:    "underscore",
 			Disable: []string{"missingPhpdoc", "phpAliases"},
 			Deps: []string{
+				`stubs/phpstorm-stubs/random/random.php`, // rand(), mt_rand(), srand() since PHP 8.2
 				`stubs/phpstorm-stubs/pcre/pcre.php`,
 			},
 		},
@@ -115,6 +117,7 @@ func TestGolden(t *testing.T) {
 			Name:    "phprocksyd",
 			Disable: []string{"missingPhpdoc", "dangerousBoolCondition"},
 			Deps: []string{
+				`stubs/phpstorm-stubs/random/random.php`, // rand(), mt_rand(), srand() since PHP 8.2
 				`stubs/phpstorm-stubs/standard/basic.php`,
 				`stubs/phpstorm-stubs/pcntl/pcntl.php`,
 				`stubs/phpstorm-stubs/json/json.php`,

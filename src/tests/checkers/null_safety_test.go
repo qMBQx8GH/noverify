@@ -256,7 +256,7 @@ class A {
     }
 }
 
-$maybeClass = rand(0, 1) ? 'A' : null;
+$maybeClass = getenv('CLASS') ? 'A' : null;
 $maybeClass::hello();
 echo $maybeClass::$value;
 `)

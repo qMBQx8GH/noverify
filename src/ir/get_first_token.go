@@ -465,6 +465,9 @@ func GetFirstToken(n Node) *token.Token {
 		if n.ConstTkn != nil {
 			return n.ConstTkn
 		}
+		if n.Type != nil {
+			return GetFirstToken(n.Type)
+		}
 		if len(n.Consts) != 0 {
 			if n.Consts[0] != nil {
 				return GetFirstToken(n.Consts[0])

@@ -511,7 +511,7 @@ func (d *rootWalker) parseFuncParams(params []ir.Node, docblockParams phpdoctype
 		paramVar := param.Variable
 		paramType := types.Map{}
 
-		if !attributes.Available(param.AttrGroups, d.ctx.st) {
+		if !attributes.Available(param.AttrGroups, d.ctx.st, d.config.PhpVersion) {
 			continue
 		}
 
@@ -1058,12 +1058,18 @@ func (d *rootWalker) enterClassConstList(list *ir.ClassConstListStmt) bool {
 		deprecationInfo.Append(deprecation)
 	}
 
+	// The declared type of the constants (PHP 8.3) is more precise than the type of the expression.
+	hintType, hasHint := d.parseTypeHintNode(list.Type)
+
 	for _, cNode := range list.Consts {
 		c := cNode.(*ir.ConstantStmt)
 
 		nm := c.ConstantName.Value
 		d.checker.CheckCommentMisspellings(c, list.Doc.Raw)
 		typ := solver.ExprTypeLocal(d.scope(), d.ctx.st, c.Expr)
+		if hasHint {
+			typ = hintType.Clone()
+		}
 
 		value := constfold.Eval(d.ctx.st, c.Expr)
 

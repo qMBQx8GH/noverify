@@ -2147,7 +2147,7 @@ function f() {
 		`Use float cast instead of real`,
 		`Use is_float function instead of is_real`,
 		`Use is_float instead of 'is_real`,
-		`Call to deprecated function is_real (since: 7.4)`,
+		`Call to deprecated function is_real (since: 7.4, removed: 8.0)`,
 	}
 	test.RunAndMatch()
 }

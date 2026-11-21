@@ -1446,6 +1446,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		}
 
 		out.ConstTkn = n.ConstTkn
+		out.Type = c.convNode(n.Type)
 		out.SeparatorTkns = n.SeparatorTkns
 		out.SemiColonTkn = n.SemiColonTkn
 

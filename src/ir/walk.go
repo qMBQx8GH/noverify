@@ -460,6 +460,9 @@ func (n *ClassConstListStmt) Walk(v Visitor) {
 	for _, nn := range n.Modifiers {
 		nn.Walk(v)
 	}
+	if n.Type != nil {
+		n.Type.Walk(v)
+	}
 	for _, nn := range n.Consts {
 		nn.Walk(v)
 	}

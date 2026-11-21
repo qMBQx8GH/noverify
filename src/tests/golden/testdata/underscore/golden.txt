@@ -64,6 +64,9 @@ WARNING notSafeCall: potentially not safe call in function select signature of p
 MAYBE   arraySyntax: Use the short form '[]' instead of the old 'array()' at testdata/underscore/underscore.php:314
     $return = array();
               ^^^^^^^
+WARNING notSafeCall: potentially not safe call in function array_merge signature of param arrays at testdata/underscore/underscore.php:319
+          $return = array_merge($return, ($shallow) ? $item : $__->flatten($item));
+                                ^^^^^^^
 WARNING notSafeCall: potentially not safe call in function flatten signature of param collection at testdata/underscore/underscore.php:319
           $return = array_merge($return, ($shallow) ? $item : $__->flatten($item));
                                                                            ^^^^^
@@ -280,24 +283,27 @@ WARNING notNullSafetyFunctionArgumentArrayDimFetch: potential null array access 
 WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function preg_match_all signature of param subject at testdata/underscore/underscore.php:913
       preg_match_all($ts['escape'], $code, $vars, PREG_SET_ORDER);
                                     ^^^^^
+WARNING notNullSafetyFunctionArgumentArrayDimFetch: potential null array access in parameter string of function trim at testdata/underscore/underscore.php:916
+          $echo = $class_name::TEMPLATE_OPEN_TAG . ' echo htmlentities(' . trim($var[1]) . '); ' . $class_name::TEMPLATE_CLOSE_TAG;
+                                                                                ^^^^^^^
 WARNING notNullSafetyFunctionArgumentArrayDimFetch: potential null array access in parameter pattern of function preg_match_all at testdata/underscore/underscore.php:920
       preg_match_all($ts['interpolate'], $code, $vars, PREG_SET_ORDER);
                      ^^^^^^^^^^^^^^^^^^
 WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function preg_match_all signature of param subject at testdata/underscore/underscore.php:920
       preg_match_all($ts['interpolate'], $code, $vars, PREG_SET_ORDER);
                                          ^^^^^
-WARNING notSafeCall: potentially not safe call in function preg_match_all signature of param matches at testdata/underscore/underscore.php:920
-      preg_match_all($ts['interpolate'], $code, $vars, PREG_SET_ORDER);
-                                                ^^^^^
+WARNING notNullSafetyFunctionArgumentArrayDimFetch: potential null array access in parameter string of function trim at testdata/underscore/underscore.php:923
+          $echo = $class_name::TEMPLATE_OPEN_TAG . ' echo ' . trim($var[1]) . '; ' . $class_name::TEMPLATE_CLOSE_TAG;
+                                                                   ^^^^^^^
 WARNING notNullSafetyFunctionArgumentArrayDimFetch: potential null array access in parameter pattern of function preg_match_all at testdata/underscore/underscore.php:927
       preg_match_all($ts['evaluate'], $code, $vars, PREG_SET_ORDER);
                      ^^^^^^^^^^^^^^^
 WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function preg_match_all signature of param subject at testdata/underscore/underscore.php:927
       preg_match_all($ts['evaluate'], $code, $vars, PREG_SET_ORDER);
                                       ^^^^^
-WARNING notSafeCall: potentially not safe call in function preg_match_all signature of param matches at testdata/underscore/underscore.php:927
-      preg_match_all($ts['evaluate'], $code, $vars, PREG_SET_ORDER);
-                                             ^^^^^
+WARNING notNullSafetyFunctionArgumentArrayDimFetch: potential null array access in parameter string of function trim at testdata/underscore/underscore.php:930
+          $echo = $class_name::TEMPLATE_OPEN_TAG . trim($var[1]) . $class_name::TEMPLATE_CLOSE_TAG;
+                                                        ^^^^^^^
 MAYBE   deprecated: Call to deprecated function create_function (since: 7.2, reason: Use anonymous functions instead, removed: 8.0) at testdata/underscore/underscore.php:940
       $func = create_function('$context', $code);
               ^^^^^^^^^^^^^^^

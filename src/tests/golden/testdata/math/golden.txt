@@ -22,6 +22,9 @@ WARNING notSafeCall: potentially not safe call in function str_pad signature of 
 WARNING notSafeCall: potentially not safe call in function ltrim signature of param string at testdata/math/src/BigInteger.php:105
         $number = \ltrim($number, '0');
                          ^^^^^^^
+WARNING notNullSafetyFunctionArgumentArrayDimFetch: potential null array access in parameter char of function charNotInAlphabet at testdata/math/src/BigInteger.php:163
+            throw NumberFormatException::charNotInAlphabet($matches[0]);
+                                                           ^^^^^^^^^^^
 MAYBE   trailingComma: Last element in a multi-line array should have a trailing comma at testdata/math/src/BigInteger.php:435
             new BigInteger($remainder)
             ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -31,12 +34,21 @@ WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function 
 WARNING notSafeCall: potentially not safe call in function preg_match signature of param subject at testdata/math/src/BigNumber.php:74
         if (\preg_match(self::PARSE_REGEXP, $value, $matches) !== 1) {
                                             ^^^^^^
+WARNING notNullSafetyFunctionArgumentArrayDimFetch: potential null array access in parameter number of function cleanUp at testdata/math/src/BigNumber.php:79
+            $numerator   = self::cleanUp($matches['integral']);
+                                         ^^^^^^^^^^^^^^^^^^^^
+WARNING notNullSafetyFunctionArgumentArrayDimFetch: potential null array access in parameter string of function ltrim at testdata/math/src/BigNumber.php:80
+            $denominator = \ltrim($matches['denominator'], '0');
+                                  ^^^^^^^^^^^^^^^^^^^^^^^
 MAYBE   ternarySimplify: Could rewrite as `$matches['fractional'] ?? ''` at testdata/math/src/BigNumber.php:90
             $fractional = isset($matches['fractional']) ? $matches['fractional'] : '';
                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-WARNING notSafeCall: potentially not safe call in function setlocale signature of param rest at testdata/math/src/BigNumber.php:131
-        \setlocale(LC_NUMERIC, $currentLocale);
-                               ^^^^^^^^^^^^^^
+WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function strlen signature of param string at testdata/math/src/BigNumber.php:95
+            $scale = \strlen($fractional) - $exponent;
+                             ^^^^^^^^^^^
+WARNING notNullSafetyFunctionArgumentArrayDimFetch: potential null array access in parameter number of function cleanUp at testdata/math/src/BigNumber.php:107
+        $integral = self::cleanUp($matches['integral']);
+                                  ^^^^^^^^^^^^^^^^^^^^
 WARNING notSafeCall: potentially not safe call in function of signature of param value at testdata/math/src/BigNumber.php:171
             $value = static::of($value);
                                 ^^^^^^
@@ -76,12 +88,6 @@ WARNING notSafeCall: potentially not safe call in function toDecimal signature o
 MAYBE   assignOp: Could rewrite as `$number ^= $xor` at testdata/math/src/Internal/Calculator.php:622
         $number = $number ^ $xor;
         ^^^^^^^^^^^^^^^^^^^^^^^^
-WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function gmp_strval signature of param num at testdata/math/src/Internal/Calculator/GmpCalculator.php:66
-            \gmp_strval($q),
-                        ^^
-WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function gmp_strval signature of param num at testdata/math/src/Internal/Calculator/GmpCalculator.php:67
-            \gmp_strval($r)
-                        ^^
 MAYBE   trailingComma: Last element in a multi-line array should have a trailing comma at testdata/math/src/Internal/Calculator/GmpCalculator.php:67
             \gmp_strval($r)
             ^^^^^^^^^^^^^^^

@@ -22,10 +22,23 @@ import (
 	"github.com/VKCOM/noverify/src/workspace"
 )
 
-// Line below implies that we have `https://github.com/VKCOM/phpstorm-stubs.git` cloned
-// to the `./src/cmd/stubs/phpstorm-stubs`.
+// Line below implies that we have `https://github.com/JetBrains/phpstorm-stubs.git` cloned
+// to the `./src/cmd/stubs/phpstorm-stubs` (`git clone --depth 1`).
 //
-//go:generate go-bindata -pkg stubs -nometadata -o ./stubs/phpstorm_stubs.go -ignore=\.idea -ignore=\.git ./stubs/phpstorm-stubs/...
+// Only the PHP files with the declarations are embedded: the tests of the repository
+// (they have a huge cache and declare their own classes), the generated PhpStormStubsMap.php,
+// and the non-PHP files are ignored. The declarations of
+// `exit`, `die` and `clone` as functions (PHP 8.4, 8.5) are removed from Core/Core.php, since the parser
+// (like PHP) does not accept the keywords as function names.
+//
+// To update the stubs:
+//
+//	go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
+//	git clone --depth 1 https://github.com/JetBrains/phpstorm-stubs.git src/cmd/stubs/phpstorm-stubs
+//	go generate ./src/cmd
+//
+//go:generate perl -i -ne "print unless /^function (exit|die|clone)\\(/" ./stubs/phpstorm-stubs/Core/Core.php
+//go:generate go-bindata -pkg stubs -nometadata -o ./stubs/phpstorm_stubs.go -ignore=\.idea -ignore=\.git -ignore=phpstorm-stubs/tests/ -ignore=phpstorm-stubs/PhpStormStubsMap\.php$ -ignore=\.(md|xml|json|lock|yml|yaml|kts|sh|bat|dist|txt)$ -ignore=/(LICENSE|Dockerfile)$ -ignore=\.php-cs-fixer\.php$ ./stubs/phpstorm-stubs/...
 
 func registerMainApp() *App {
 	return &App{
