@@ -142,3 +142,91 @@ $p->untyped = 3;
 $p->withDefault++;
 `)
 }
+
+func TestPHP82TraitConstants(t *testing.T) {
+	linttest.SimpleNegativeTest(t, `<?php
+trait HasStatus {
+  public const DEFAULT_STATUS = 'draft';
+  protected const LIMIT = 10;
+  private const SECRET = 3;
+  final public const FIXED = 2;
+
+  /** */
+  public function limit(): int { return self::LIMIT + static::FIXED + self::SECRET; }
+}
+
+trait Outer {
+  use HasStatus;
+
+  public const OUTER = 5;
+}
+
+class Article {
+  use HasStatus;
+
+  /** */
+  public function all(): int { return self::LIMIT + static::FIXED + self::SECRET; }
+}
+
+class Post {
+  use Outer;
+}
+
+class Child extends Article {}
+
+echo Article::DEFAULT_STATUS, Article::FIXED, (new Article())->all(), (new Article())->limit();
+echo Post::OUTER, Post::DEFAULT_STATUS, Post::FIXED;
+echo Child::DEFAULT_STATUS, Child::FIXED;
+`)
+}
+
+func TestPHP82TraitConstantsErrors(t *testing.T) {
+	test := linttest.NewSuite(t)
+	test.AddFile(`<?php
+trait HasStatus {
+  public const DEFAULT_STATUS = 'draft';
+  protected const LIMIT = 10;
+  private const SECRET = 3;
+}
+
+class Article {
+  use HasStatus;
+}
+
+class Other {}
+
+echo HasStatus::DEFAULT_STATUS;
+echo Article::MISSING;
+echo Article::LIMIT;
+echo Article::SECRET;
+echo Other::DEFAULT_STATUS;
+`)
+	test.Expect = []string{
+		`Cannot access trait constant \HasStatus::DEFAULT_STATUS directly`,
+		`Class constant \Article::MISSING does not exist`,
+		`Cannot access protected constant \Article::LIMIT`,
+		`Cannot access private constant \Article::SECRET`,
+		`Class constant \Other::DEFAULT_STATUS does not exist`,
+	}
+	test.RunAndMatch()
+}
+
+func TestPHP82TraitConstantType(t *testing.T) {
+	test := linttest.NewSuite(t)
+	test.AddFile(`<?php
+trait T {
+  public const NAME = 'x';
+}
+
+class C {
+  use T;
+}
+
+$name = C::NAME;
+echo $name->foo();
+`)
+	test.Expect = []string{
+		`Call to undefined method {string}->foo()`,
+	}
+	test.RunAndMatch()
+}

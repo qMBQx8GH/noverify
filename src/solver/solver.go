@@ -625,6 +625,14 @@ func findConstant(info *meta.Info, className, constName string, visitedClasses m
 			return res, class.Name, ok
 		}
 
+		// Constants of a trait (PHP 8.2) become constants of the class that uses the trait.
+		for traitName := range class.Traits {
+			res, ok = FindTraitConstant(info, traitName, constName)
+			if ok {
+				return res, class.Name, ok
+			}
+		}
+
 		// interfaces support multiple inheritance and I use a separate property for that for now
 		for _, parentIfaceName := range class.ParentInterfaces {
 			res, implClassName, ok = findConstant(info, parentIfaceName, constName, visitedClasses)
@@ -639,6 +647,40 @@ func findConstant(info *meta.Info, className, constName string, visitedClasses m
 
 		className = class.Parent
 	}
+}
+
+// FindTraitConstant searches for a constant declared in the trait or in the traits it uses.
+//
+// Since PHP 8.2 traits can declare constants, but they cannot be accessed through the
+// trait itself, only through a class that uses the trait (see FindConstant).
+func FindTraitConstant(info *meta.Info, traitName, constName string) (res meta.ConstInfo, ok bool) {
+	return findTraitConstant(info, traitName, constName, make(map[string]struct{}))
+}
+
+func findTraitConstant(info *meta.Info, traitName, constName string, visited map[string]struct{}) (res meta.ConstInfo, ok bool) {
+	if _, seen := visited[traitName]; seen {
+		return res, false
+	}
+	visited[traitName] = struct{}{}
+
+	trait, ok := info.GetTrait(traitName)
+	if !ok {
+		return res, false
+	}
+
+	res, ok = trait.Constants[constName]
+	if ok {
+		return res, true
+	}
+
+	for usedTrait := range trait.Traits {
+		res, ok = findTraitConstant(info, usedTrait, constName, visited)
+		if ok {
+			return res, true
+		}
+	}
+
+	return res, false
 }
 
 func identityType(typ string) map[string]struct{} {

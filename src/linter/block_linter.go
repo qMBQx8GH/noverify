@@ -1665,7 +1665,12 @@ func (b *blockLinter) checkClassConstFetch(e *ir.ClassConstFetchExpr) {
 	}
 
 	if !fetch.isFound && !b.classParseState().IsTrait {
-		b.report(e.ConstantName, LevelError, "undefinedConstant", "Class constant %s::%s does not exist", fetch.className, fetch.constName)
+		if _, ok := solver.FindTraitConstant(b.classParseState().Info, fetch.className, fetch.constName); ok {
+			// The constant exists, but traits don't allow to access their constants directly.
+			b.report(e.ConstantName, LevelError, "undefinedConstant", "Cannot access trait constant %s::%s directly, use a class that uses the trait", fetch.className, fetch.constName)
+		} else {
+			b.report(e.ConstantName, LevelError, "undefinedConstant", "Class constant %s::%s does not exist", fetch.className, fetch.constName)
+		}
 	}
 
 	if fetch.isFound && !canAccess(b.classParseState(), fetch.implClassName, fetch.info.AccessLevel) {
