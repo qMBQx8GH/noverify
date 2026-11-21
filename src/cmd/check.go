@@ -9,6 +9,11 @@ import (
 )
 
 func Check(ctx *AppContext) (int, error) {
+	// The config file adds its values to the flags, so it must be applied first.
+	if err := applyFileConfig(ctx); err != nil {
+		return 1, err
+	}
+
 	config := ctx.MainConfig.linter.Config()
 
 	bindConfigValuesWithFlags(ctx, config)

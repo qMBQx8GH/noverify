@@ -79,6 +79,51 @@ noverify check --allow-checks='undefined, arraySyntax' ./
 
 Now the output will **only** contain `undefined` and `arraySyntax` errors.
 
+### How to use a config file
+
+Instead of a long command line, the settings can be stored in a YAML file (like `phpstan.neon` for PHPStan) and passed with `--config` (or `-c`):
+
+```bash
+cd modules/clouds
+noverify check -c dev/phpat/noverify.yaml
+```
+
+```yaml
+# dev/phpat/noverify.yaml
+# The relative paths are relative to this file, not to the working directory,
+# so noverify can be run from any directory.
+
+# What to analyze.
+paths:
+  - ../..
+
+# What to only index (the functions and classes from there are used for the type inference,
+# but the files are not analyzed). It is the same as --index-only-files.
+include:
+  - ../../../main
+  - ../../../security
+
+# Files and directories that are excluded from both the indexing and the analysis,
+# for example incomplete stubs. It is the same as --exclude-files.
+exclude-files:
+  - ../../../main/cli/bootstrap.php
+  - ../../../main/dev/cli/annotations/bootstrap.php
+
+# Checks to disable. It is the same as --exclude-checks.
+exclude-checks:
+  - useExitOrDie
+  - notSafeCall
+```
+
+All the keys are optional. A key that is not in the list above is an error (so a typo is not silently ignored), a path from `paths` or `include` must exist.
+
+The command line is merged with the config: `include`, `exclude-files` and `exclude-checks` are added to `--index-only-files`, `--exclude-files` and `--exclude-checks`. The paths passed in the command line replace `paths` of the config:
+
+```bash
+# Analyze only one directory with the settings of the config.
+noverify check -c dev/phpat/noverify.yaml lib/Internal
+```
+
 ### How to exclude some files and folders from checking
 
 It looks like this:

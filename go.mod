@@ -11,4 +11,6 @@ require (
 	go.lsp.dev/uri v0.3.0
 )
 
+require gopkg.in/yaml.v3 v3.0.1
+
 replace github.com/VKCOM/php-parser => ../php-parser
