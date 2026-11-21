@@ -247,3 +247,32 @@ $p = new Point(1, 2);
 echo $p->x, $p->y;
 `)
 }
+
+func TestPHP81EnumReservedCaseNames(t *testing.T) {
+	linttest.SimpleNegativeTest(t, `<?php
+enum Mode: int {
+  case Use = 1;
+  case Empty = 2;
+  case Default = 3;
+  case List = 4;
+  case Static = 5;
+}
+
+echo Mode::Use->value, Mode::Empty->name, Mode::from(3)->name;
+echo count(Mode::cases());
+`)
+}
+
+func TestPHP81EnumAsIdentifier(t *testing.T) {
+	linttest.SimpleNegativeTest(t, `<?php
+/** */
+class Enum {
+  const X = 1;
+}
+
+/** */
+class Child extends Enum {}
+
+echo Enum::X, (new Child())::X;
+`)
+}

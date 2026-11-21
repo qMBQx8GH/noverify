@@ -10,3 +10,5 @@ require (
 	github.com/quasilyte/regex/syntax v0.0.0-20200419152657-af9db7f4a3ab
 	go.lsp.dev/uri v0.3.0
 )
+
+replace github.com/VKCOM/php-parser => ../php-parser
