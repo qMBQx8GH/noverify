@@ -401,7 +401,7 @@ func (d *rootWalker) handleArrowFuncExpr(params []meta.FuncParam, expr ir.Node, 
 
 	for _, p := range params {
 		if p.IsRef {
-			b.nonLocalVars[p.Name] = varRef
+			b.nonLocalVars[p.Name] = varOuterRef
 		}
 	}
 
@@ -444,7 +444,7 @@ func (d *rootWalker) handleFuncStmts(params []meta.FuncParam, uses, stmts []ir.N
 		if !byRef {
 			b.unusedVars[v.Name] = append(b.unusedVars[v.Name], v)
 		} else {
-			b.nonLocalVars[v.Name] = varRef
+			b.nonLocalVars[v.Name] = varOuterRef
 		}
 	}
 
@@ -455,7 +455,7 @@ func (d *rootWalker) handleFuncStmts(params []meta.FuncParam, uses, stmts []ir.N
 	}
 	for _, p := range params {
 		if p.IsRef {
-			b.nonLocalVars[p.Name] = varRef
+			b.nonLocalVars[p.Name] = varOuterRef
 		}
 		if !p.IsRef && !d.config.IsDiscardVar(p.Name) {
 			b.unusedParams[p.Name] = struct{}{}

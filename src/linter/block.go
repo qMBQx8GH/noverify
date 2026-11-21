@@ -54,10 +54,18 @@ type variableKind int
 
 const (
 	varLocal variableKind = iota
+	// varRef is a variable that is created by passing it to a function by reference:
+	// `preg_match($re, $s, $m)`. If it is created in the condition of an if, it is moved
+	// out of the if block (moveNonLocalVariables) and becomes a usual local variable.
 	varRef
 	varGlobal
 	varCondGlobal
 	varStatic
+	// varOuterRef is a variable that refers to the data outside of the function during
+	// the whole function: a parameter passed by reference (`function f(&$x)`) or a
+	// variable captured by reference (`use (&$x)`). Assignments to it are visible to
+	// the caller, so they are never unused, and it is never moved out of a block.
+	varOuterRef
 )
 
 // arrayKeyType is an universal PHP array key type.
