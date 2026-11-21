@@ -221,3 +221,29 @@ class A {
 	}
 	test.RunAndMatch()
 }
+
+func TestPHP81IntersectionTypes(t *testing.T) {
+	linttest.SimpleNegativeTest(t, `<?php
+interface A {
+  /** */
+  public function a(): int;
+}
+interface B {
+  /** */
+  public function b(): int;
+}
+
+function f(A&B $x): int { return $x->a() + $x->b(); }
+`)
+}
+
+func TestPHP82ReadonlyClass(t *testing.T) {
+	linttest.SimpleNegativeTest(t, `<?php
+final readonly class Point {
+  public function __construct(public int $x, public int $y) {}
+}
+
+$p = new Point(1, 2);
+echo $p->x, $p->y;
+`)
+}

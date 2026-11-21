@@ -2291,6 +2291,20 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.SeparatorTkns = n.SeparatorTkns
 		return out
 
+	case *ast.Intersection:
+		// The linter has no intersection types, so `A&B` is represented as a
+		// union of its parts, which is the most permissive interpretation:
+		// a value is accepted if it fits at least one of the types.
+		if n == nil {
+			return (*ir.Union)(nil)
+		}
+		out := &ir.Union{}
+
+		out.Position = n.Position
+		out.Types = c.convNodeSlice(n.Types)
+		out.SeparatorTkns = n.SeparatorTkns
+		return out
+
 	case *ast.Attribute:
 		if n == nil {
 			return (*ir.MatchArm)(nil)
