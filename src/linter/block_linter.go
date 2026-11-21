@@ -1602,6 +1602,7 @@ func (b *blockLinter) checkPropertyFetch(e *ir.PropertyFetchExpr) {
 	if !fetch.isFound && !fetch.isMagic &&
 		!globalMetaInfo.IsTrait &&
 		!b.walker.isThisInsideClosure(e.Variable) &&
+		!b.allowsDynamicProperties(fetch.propertyFetchType) &&
 		needShowUndefinedProperty {
 		b.report(e.Property, LevelError, "undefinedProperty", "Property {%s}->%s does not exist", fetch.propertyFetchType, fetch.propertyNode.Value)
 	}
@@ -1622,6 +1623,15 @@ func (b *blockLinter) checkPropertyFetch(e *ir.PropertyFetchExpr) {
 	if ok {
 		b.checkSafetyCall(e, left, "", "PropertyFetch")
 	}
+}
+
+// allowsDynamicProperties reports whether dynamic properties are allowed
+// for at least one of the types (#[\AllowDynamicProperties], see solver.AllowsDynamicProperties).
+func (b *blockLinter) allowsDynamicProperties(typ types.Map) bool {
+	info := b.classParseState().Info
+	return typ.Find(func(t string) bool {
+		return solver.AllowsDynamicProperties(info, t)
+	})
 }
 
 func (b *blockLinter) checkStaticPropertyFetch(e *ir.StaticPropertyFetchExpr) {

@@ -230,3 +230,89 @@ echo $name->foo();
 	}
 	test.RunAndMatch()
 }
+
+func TestPHP82AllowDynamicProperties(t *testing.T) {
+	linttest.SimpleNegativeTest(t, `<?php
+#[\AllowDynamicProperties]
+class Allowed {
+  public int $a = 1;
+}
+
+/** */
+class Child extends Allowed {}
+
+/** */
+class GrandChild extends Child {}
+
+#[AllowDynamicProperties]
+/** */
+class GlobalNs {}
+
+$a = new Allowed();
+echo $a->dynamic;
+
+$c = new Child();
+echo $c->dynamic;
+
+$g = new GrandChild();
+echo $g->dynamic;
+
+$n = new GlobalNs();
+echo $n->dynamic;
+
+$s = new stdClass();
+echo $s->dynamic;
+`)
+}
+
+func TestPHP82DynamicPropertiesWithoutAttribute(t *testing.T) {
+	test := linttest.NewSuite(t)
+	test.AddFile(`<?php
+class Plain {
+  public int $a = 1;
+}
+
+class Child extends Plain {}
+
+#[\AllowDynamicProperties]
+class Allowed {}
+
+$p = new Plain();
+echo $p->dynamic;
+
+$c = new Child();
+echo $c->dynamic;
+
+$a = new Allowed();
+echo $a->dynamic;
+`)
+	test.Expect = []string{
+		`Property {\Plain}->dynamic does not exist`,
+		`Property {\Child}->dynamic does not exist`,
+	}
+	test.RunAndMatch()
+}
+
+func TestPHP82AllowDynamicPropertiesInNamespace(t *testing.T) {
+	test := linttest.NewSuite(t)
+	test.AddFile(`<?php
+namespace App;
+
+// Without the leading slash it is \App\AllowDynamicProperties, which has no effect.
+#[AllowDynamicProperties]
+class NotApplied {}
+
+#[\AllowDynamicProperties]
+class Applied {}
+
+$n = new NotApplied();
+echo $n->dynamic;
+
+$a = new Applied();
+echo $a->dynamic;
+`)
+	test.Expect = []string{
+		`Property {\App\NotApplied}->dynamic does not exist`,
+	}
+	test.RunAndMatch()
+}

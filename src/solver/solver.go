@@ -649,6 +649,34 @@ func findConstant(info *meta.Info, className, constName string, visitedClasses m
 	}
 }
 
+// AllowsDynamicProperties reports whether dynamic properties are allowed for the class:
+// it, or one of its parents, is marked with #[\AllowDynamicProperties] (PHP 8.2),
+// or it is stdClass.
+func AllowsDynamicProperties(info *meta.Info, className string) bool {
+	if className == `\stdClass` {
+		return true
+	}
+
+	visited := make(map[string]struct{})
+	for className != "" {
+		if _, ok := visited[className]; ok {
+			return false
+		}
+		visited[className] = struct{}{}
+
+		class, ok := info.GetClass(className)
+		if !ok {
+			return false
+		}
+		if class.AllowsDynamicProperties() || class.Name == `\stdClass` {
+			return true
+		}
+		className = class.Parent
+	}
+
+	return false
+}
+
 // FindTraitConstant searches for a constant declared in the trait or in the traits it uses.
 //
 // Since PHP 8.2 traits can declare constants, but they cannot be accessed through the

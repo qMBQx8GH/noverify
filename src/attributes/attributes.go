@@ -10,7 +10,24 @@ const (
 	LevelTypeAware       = `\JetBrains\PhpStorm\Internal\LanguageLevelTypeAware`
 	ElementAvailable     = `\JetBrains\PhpStorm\Internal\PhpStormStubsElementAvailable`
 	DeprecatedAnnotation = `\JetBrains\PhpStorm\Deprecated`
+
+	// AllowDynamicPropertiesAttribute allows to create dynamic properties of the class and
+	// of its children without the deprecation of PHP 8.2.
+	AllowDynamicPropertiesAttribute = `\AllowDynamicProperties`
 )
+
+// AllowDynamicProperties reports whether the class is marked with #[\AllowDynamicProperties].
+func AllowDynamicProperties(groups []*ir.AttributeGroup, state *meta.ClassParseState) (found bool) {
+	Each(groups, func(attr *ir.Attribute) bool {
+		if Name(attr, state) == AllowDynamicPropertiesAttribute {
+			found = true
+			return false
+		}
+		return true
+	})
+
+	return found
+}
 
 func TypeAware(groups []*ir.AttributeGroup, state *meta.ClassParseState) (typ types.Map) {
 	Each(groups, func(attr *ir.Attribute) bool {

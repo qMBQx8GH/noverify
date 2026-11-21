@@ -206,6 +206,8 @@ const (
 	ClassInterface
 	// ClassReadonly is set for `readonly class` (PHP 8.2): all its properties are readonly.
 	ClassReadonly
+	// ClassAllowDynamicProperties is set for the class marked with #[\AllowDynamicProperties].
+	ClassAllowDynamicProperties
 )
 
 type ClassInfo struct {
@@ -225,11 +227,14 @@ type ClassInfo struct {
 	DeprecationInfo
 }
 
-func (info *ClassInfo) IsAbstract() bool   { return info.Flags&ClassAbstract != 0 }
-func (info *ClassInfo) IsFinal() bool      { return info.Flags&ClassFinal != 0 }
-func (info *ClassInfo) IsShape() bool      { return info.Flags&ClassShape != 0 }
-func (info *ClassInfo) IsInterface() bool  { return info.Flags&ClassInterface != 0 }
-func (info *ClassInfo) IsReadonly() bool   { return info.Flags&ClassReadonly != 0 }
+func (info *ClassInfo) IsAbstract() bool  { return info.Flags&ClassAbstract != 0 }
+func (info *ClassInfo) IsFinal() bool     { return info.Flags&ClassFinal != 0 }
+func (info *ClassInfo) IsShape() bool     { return info.Flags&ClassShape != 0 }
+func (info *ClassInfo) IsInterface() bool { return info.Flags&ClassInterface != 0 }
+func (info *ClassInfo) IsReadonly() bool  { return info.Flags&ClassReadonly != 0 }
+func (info *ClassInfo) AllowsDynamicProperties() bool {
+	return info.Flags&ClassAllowDynamicProperties != 0
+}
 func (info *ClassInfo) IsDeprecated() bool { return info.Deprecated }
 
 // TODO: rename it; it's not only class-related.

@@ -822,6 +822,9 @@ func (d *rootWalker) getClassModifiers(n *ir.ClassStmt) meta.ClassFlags {
 			classFlags |= meta.ClassReadonly
 		}
 	}
+	if attributes.AllowDynamicProperties(n.AttrGroups, d.ctx.st) {
+		classFlags |= meta.ClassAllowDynamicProperties
+	}
 	return classFlags
 }
 
