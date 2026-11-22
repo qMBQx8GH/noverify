@@ -86,6 +86,21 @@ func CanBeNull(typ Map) bool {
 	return canBeNull
 }
 
+// IsArrayMap reports whether all the types of the map are arrays (`T[]`, `array`, array shapes
+// and lazy arrays) and the map is not empty.
+func IsArrayMap(typ Map) bool {
+	if typ.Empty() {
+		return false
+	}
+	all := true
+	typ.Iterate(func(t string) {
+		if !(isArrayType(t) || t == "array" || IsShape(t) || (len(t) > 0 && t[0] == WArrayOf)) {
+			all = false
+		}
+	})
+	return all
+}
+
 // isArrayType reports whether the type is a resolved array: `T[]`.
 func isArrayType(t string) bool {
 	return strings.HasSuffix(t, "[]")

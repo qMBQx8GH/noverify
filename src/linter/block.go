@@ -1782,7 +1782,15 @@ func (b *blockWalker) handleCallArgs(args []ir.Node, fn meta.FuncInfo) {
 			if ref {
 				b.addNonLocalVar(a, varRef)
 				// TODO: variable may actually not be set by ref
-				b.addVar(a, fn.Params[i].Typ, "call_with_ref", meta.VarAlwaysDefined)
+				typ := fn.Params[i].Typ
+				if typ.Is("array") {
+					// `krsort($a)`: a function that takes `array &$a` keeps the array an array
+					// of the same elements, there is no reason to forget what we know about them.
+					if old, ok := b.ctx.sc.GetVarType(a); ok && types.IsArrayMap(old) {
+						typ = old
+					}
+				}
+				b.addVar(a, typ, "call_with_ref", meta.VarAlwaysDefined)
 				break
 			}
 			a.Walk(b)
