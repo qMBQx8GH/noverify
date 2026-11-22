@@ -25,6 +25,16 @@ func TestCanBeNull(t *testing.T) {
 		{"mixed[] resolved", NewMap("mixed[]"), false},
 		{"null[] resolved", NewMap("null[]"), false},
 
+		// A lazy type is the description of a computation, the words in it are the names.
+		{"call on mixed", NewMap(WrapInstanceMethodCall("mixed", "getResult")), false},
+		{"call of a method with null in the name", NewMap(WrapInstanceMethodCall(`\\Foo`, "isNull")), false},
+		{"call of a function with null in the name", NewMap(WrapFunctionCall("is_null")), false},
+		{"property named null", NewMap(WrapInstancePropertyFetch(`\\Foo`, "nullable")), false},
+		{"static call", NewMap(WrapStaticMethodCall(`\\NullObject`, "mixed")), false},
+		{"two calls", NewMap(WrapInstanceMethodCall("mixed", "getResult")).Append(NewMap(WrapInstanceMethodCall(`\\Test`, "getResult"))), false},
+		{"a call and null", NewMap(WrapInstanceMethodCall("mixed", "getResult")).Append(NewMap("null")), true},
+		{"a call and mixed", NewMap(WrapInstanceMethodCall(`\\Foo`, "m")).Append(NewMap("mixed")), true},
+
 		// But an array that can be null.
 		{"mixed[] or null", NewMap(WrapArrayOf("mixed")).Append(NewMap("null")), true},
 		{"array or mixed", NewMap(WrapArrayOf("int")).Append(NewMap("mixed")), true},

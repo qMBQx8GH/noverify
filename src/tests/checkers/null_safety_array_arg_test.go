@@ -111,3 +111,20 @@ function f(NoTypes $list, FromInterface $typed) {
 }
 `)
 }
+
+func TestLazyTypeNamesAreNotNull(t *testing.T) {
+	checkLinesOf(t, "notNullSafetyFunctionArgumentVariable", `<?php
+class Res {
+  public function getResult() { return 1; }
+  public function isNull(): int { return 1; }
+}
+function take(int $x) { return $x; }
+/** @param mixed $m */
+function f($m, Res $r) {
+  $a = $m->getResult();
+  take($a);
+  $b = $r->isNull();
+  take($b);
+}
+`)
+}

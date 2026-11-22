@@ -118,9 +118,6 @@ WARNING notSafeCall: potentially not safe call in function mt_srand signature of
 ERROR   undefinedMethod: Call to undefined method {mixed}->run() at testdata/phprocksyd/Phprocksyd.php:479
                 $instance->run($req['params']);
                            ^^^
-WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function stream_get_meta_data signature of param stream at testdata/phprocksyd/Phprocksyd.php:522
-                $meta = stream_get_meta_data($v);
-                                             ^^
 WARNING useExitOrDie: Don't use the 'exit' function at testdata/phprocksyd/Phprocksyd.php:557
                         exit(1);
                         ^^^^^^^

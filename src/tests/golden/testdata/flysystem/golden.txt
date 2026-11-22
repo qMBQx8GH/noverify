@@ -148,12 +148,6 @@ WARNING notSafeCall: potentially not safe call in function createActualDirectory
 WARNING notSafeCall: potentially not safe call in function ftp_chdir signature of param ftp at testdata/flysystem/src/Adapter/Ftp.php:348
             ftp_chdir($connection, $directory);
                       ^^^^^^^^^^^
-WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function preg_match signature of param subject at testdata/flysystem/src/Adapter/Ftp.php:370
-            if (preg_match('~^\./.*~', $item)) {
-                                       ^^^^^
-WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function substr signature of param string at testdata/flysystem/src/Adapter/Ftp.php:371
-                $listing[$key] = substr($item, 2);
-                                        ^^^^^
 WARNING errorSilence: Don't use @, silencing errors is bad practice at testdata/flysystem/src/Adapter/Ftp.php:391
         if (@ftp_chdir($this->getConnection(), $path) === true) {
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
