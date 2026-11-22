@@ -120,6 +120,10 @@ type FuncParam struct {
 	IsRef bool
 	Name  string
 	Typ   types.Map
+
+	// TypeFromDefault is true if Typ is only inferred from the default value
+	// (no type hint, no @param): it is not a declared type.
+	TypeFromDefault bool
 }
 
 type FuncInfo struct {

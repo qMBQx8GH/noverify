@@ -145,3 +145,16 @@ function f(R2 $r) {
 }
 `)
 }
+
+func TestTypeInferredFromDefaultIsNotDeclared(t *testing.T) {
+	checkLinesOf(t, "notSafeCall", `<?php
+class Cmp {
+  public function inc($name, $params = [], $parent = null) {}
+}
+function f(Cmp $c) {
+  $params = ['A' => '/a', 'B' => '/b'];
+  $c->inc('x', $params, false);
+  $c->inc('x', $params, new Cmp());
+}
+`)
+}

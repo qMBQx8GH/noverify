@@ -59,7 +59,8 @@ import (
 //	60 - added the ClassAllowDynamicProperties flag
 //	61 - the parameters of the stubs are selected by the PHP version (PhpStormStubsElementAvailable from/to)
 //	62 - the default PHP version is 8.3 (the parameters of the stubs depend on it), the Modifiers of anonymous classes
-const cacheVersion = 62
+//	63 - added TypeFromDefault to meta.FuncParam
+const cacheVersion = 63
 
 var (
 	errWrongVersion = errors.New("Wrong cache version")

@@ -256,9 +256,6 @@ MAYBE   trailingComma: Last element in a multi-line array should have a trailing
 MAYBE   typeHint: Specify the type for the parameter $Block in PHPDoc, 'array' type hint too generic at testdata/parsedown/parsedown.php:1093
     protected function paragraphContinue($Line, array $Block)
                        ^^^^^^^^^^^^^^^^^
-WARNING notSafeCall: potentially not safe call in function lineElements signature of param nonNestables at testdata/parsedown/parsedown.php:1132
-        return $this->elements($this->lineElements($text, $nonNestables));
-                                                          ^^^^^^^^^^^^^
 WARNING notSafeCall: potentially not safe call in function strpbrk signature of param string at testdata/parsedown/parsedown.php:1149
         while ($excerpt = strpbrk($text, $this->inlineMarkerList))
                                   ^^^^^

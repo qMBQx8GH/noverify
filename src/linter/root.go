@@ -533,7 +533,9 @@ func (d *rootWalker) parseFuncParams(params []ir.Node, docblockParams phpdoctype
 		}
 
 		// Handle default value.
+		typeFromDefault := false
 		if paramType.Empty() && param.DefaultValue != nil {
+			typeFromDefault = true
 			paramType = solver.ExprTypeLocal(sc, d.ctx.st, param.DefaultValue)
 			// For the type resolver default value can look like a
 			// precise source of information (e.g. "false" is a precise bool),
@@ -552,12 +554,14 @@ func (d *rootWalker) parseFuncParams(params []ir.Node, docblockParams phpdoctype
 
 		// Append @param type.
 		if !docType.Typ.Empty() {
+			typeFromDefault = false
 			paramType = paramType.Append(docType.Typ)
 		}
 
 		paramTypeAware := attributes.TypeAware(param.AttrGroups, d.ctx.st)
 		if !paramTypeAware.Empty() {
 			paramType = paramType.Append(paramTypeAware)
+			typeFromDefault = false
 		}
 
 		// Count min args count.
@@ -571,6 +575,8 @@ func (d *rootWalker) parseFuncParams(params []ir.Node, docblockParams phpdoctype
 			Name:  paramVar.Name,
 			Typ:   paramType.Immutable(),
 			IsRef: param.ByRef,
+
+			TypeFromDefault: typeFromDefault,
 		})
 	}
 

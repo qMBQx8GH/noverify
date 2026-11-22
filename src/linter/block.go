@@ -1282,7 +1282,7 @@ func (b *blockWalker) checkFunctionCallSafety(arg ir.Node, fn meta.FuncInfo, par
 	}
 
 	param := nullSafetyRealParamForCheck(fn, paramIndex, haveVariadic)
-	paramType := param.Typ
+	paramType := checkedParamType(param)
 	if haveVariadic && paramIndex >= len(fn.Params)-1 {
 		// For variadic parameter check, if type is mixed then skip.
 		if types.IsTypeMixed(paramType) {
@@ -1301,7 +1301,7 @@ func (b *blockWalker) checkFunctionCallSafety(arg ir.Node, fn meta.FuncInfo, par
 		return
 	}
 
-	if !b.isTypeCompatible(callType, param.Typ) {
+	if !b.isTypeCompatible(callType, checkedParamType(param)) {
 		b.report(arg, LevelWarning, "notSafeCall",
 			"potentially not safe call in function %s signature of param %s when calling function %s",
 			formatSlashesFuncName(fn), param.Name, funcInfo.Name)
@@ -1337,7 +1337,7 @@ func (b *blockWalker) checkStaticCallSafety(arg ir.Node, fn meta.FuncInfo, param
 	}
 
 	param := nullSafetyRealParamForCheck(fn, paramIndex, haveVariadic)
-	paramType := param.Typ
+	paramType := checkedParamType(param)
 	if haveVariadic && paramIndex >= len(fn.Params)-1 {
 		// For variadic parameter check, if type is mixed then skip.
 		if types.IsTypeMixed(paramType) {
@@ -1357,7 +1357,7 @@ func (b *blockWalker) checkStaticCallSafety(arg ir.Node, fn meta.FuncInfo, param
 		return
 	}
 
-	if !b.isTypeCompatible(funcType, param.Typ) {
+	if !b.isTypeCompatible(funcType, checkedParamType(param)) {
 		b.report(arg, LevelWarning, "notSafeCall",
 			"potentially not safe static call in function %s signature of param %s",
 			formatSlashesFuncName(fn), param.Name)
@@ -1371,7 +1371,7 @@ func (b *blockWalker) checkSimpleVarSafety(arg ir.Node, fn meta.FuncInfo, paramI
 	}
 
 	param := nullSafetyRealParamForCheck(fn, paramIndex, haveVariadic)
-	paramType := param.Typ
+	paramType := checkedParamType(param)
 	if haveVariadic && paramIndex >= len(fn.Params)-1 {
 		// For variadic parameter check, if type is mixed then skip.
 		if types.IsTypeMixed(paramType) {
@@ -1396,6 +1396,17 @@ func (b *blockWalker) checkSimpleVarSafety(arg ir.Node, fn meta.FuncInfo, paramI
 			"potentially not safe call in function %s signature of param %s",
 			formatSlashesFuncName(fn), param.Name)
 	}
+}
+
+// checkedParamType returns the type of the parameter to check the arguments against.
+//
+// The type that is only a guess from the default value (`$a = []`, `$b = null`) is not
+// a declaration: any value can be passed, so there is nothing to check.
+func checkedParamType(param meta.FuncParam) types.Map {
+	if param.TypeFromDefault {
+		return types.Map{}
+	}
+	return param.Typ
 }
 
 func (b *blockWalker) isTypeCompatible(varType types.Map, paramType types.Map) bool {
@@ -1483,7 +1494,7 @@ func (b *blockWalker) checkConstFetchSafety(arg ir.Node, fn meta.FuncInfo, param
 	isNull := constVal == "null"
 
 	param := nullSafetyRealParamForCheck(fn, paramIndex, haveVariadic)
-	paramType := param.Typ
+	paramType := checkedParamType(param)
 	if haveVariadic && paramIndex >= len(fn.Params)-1 {
 		if types.IsTypeMixed(paramType) {
 			return
@@ -1539,7 +1550,7 @@ func (b *blockWalker) checkArrayDimFetchSafety(arg ir.Node, fn meta.FuncInfo, pa
 		return
 	}
 
-	if !b.isTypeCompatible(varType, param.Typ) {
+	if !b.isTypeCompatible(varType, checkedParamType(param)) {
 		b.report(arg, LevelWarning, "notSafeCall",
 			"potentially not safe array access in parameter %s of function %s",
 			param.Name, formatSlashesFuncName(fn))
@@ -1558,7 +1569,7 @@ func (b *blockWalker) checkListExprSafety(arg ir.Node, fn meta.FuncInfo, paramIn
 
 		if item.Val != nil {
 			param := nullSafetyRealParamForCheck(fn, paramIndex, haveVariadic)
-			paramType := param.Typ
+			paramType := checkedParamType(param)
 			if simpleVar, ok := item.Val.(*ir.SimpleVar); ok {
 				varInfo, found := b.ctx.sc.GetVar(simpleVar)
 				if found {
@@ -1599,7 +1610,7 @@ func (b *blockWalker) checkingPropertyFetchSafetyCondition(
 ) {
 	isPrpNullable := types.IsTypeNullable(propType)
 	param := nullSafetyRealParamForCheck(fn, paramIndex, haveVariadic)
-	paramType := param.Typ
+	paramType := checkedParamType(param)
 
 	if haveVariadic && paramIndex >= len(fn.Params)-1 {
 		if types.IsTypeMixed(paramType) {
