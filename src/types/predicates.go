@@ -58,6 +58,35 @@ func IsTypeNullable(typ Map) bool {
 	return isNullable
 }
 
+// CanBeNull reports whether a value of the type can be null.
+//
+// It differs from IsTypeNullable for the arrays: a value of the type `mixed[]` or `null[]` is an
+// array, it is not null even if the elements can be. IsTypeNullable says "true" for them,
+// because it looks for the words "null" and "mixed" in the type (it is used for the elements of
+// an array too, and for the parameters).
+func CanBeNull(typ Map) bool {
+	if typ.m == nil || typ.Empty() {
+		return true // We consider that if the type is not inferred, then it is mixed
+	}
+
+	canBeNull := false
+	typ.Iterate(func(t string) {
+		if isArrayType(t) {
+			return
+		}
+		if strings.Contains(t, "null") || strings.Contains(t, "mixed") {
+			canBeNull = true
+		}
+	})
+	return canBeNull
+}
+
+// isArrayType reports whether the type is an array: `T[]` or the lazy ArrayOf(T)
+// (the types of the scope are lazy until they are resolved).
+func isArrayType(t string) bool {
+	return strings.HasSuffix(t, "[]") || (len(t) > 0 && t[0] == WArrayOf)
+}
+
 func IsTypeMixed(typ Map) bool {
 	return typ.Contains("mixed")
 }

@@ -1291,7 +1291,7 @@ func (b *blockWalker) checkFunctionCallSafety(arg ir.Node, fn meta.FuncInfo, par
 	}
 	paramAllowsNull := types.IsTypeNullable(paramType)
 	varIsNullable := types.IsTypeNullable(callType)
-	if varIsNullable && !paramAllowsNull {
+	if varIsNullable && types.CanBeNull(callType) && !paramAllowsNull {
 		b.report(arg, LevelWarning, "notNullSafetyFunctionArgumentFunctionCall",
 			"not null safety call in function %s signature of param %s when calling function %s",
 			formatSlashesFuncName(fn), param.Name, funcInfo.Name)
@@ -1347,7 +1347,7 @@ func (b *blockWalker) checkStaticCallSafety(arg ir.Node, fn meta.FuncInfo, param
 	funcType := funcInfo.Typ
 	paramAllowsNull := types.IsTypeNullable(paramType)
 	varIsNullable := types.IsTypeNullable(funcType)
-	if varIsNullable && !paramAllowsNull {
+	if varIsNullable && types.CanBeNull(funcType) && !paramAllowsNull {
 		b.report(arg, LevelWarning, "notNullSafetyFunctionArgumentStaticFunctionCall",
 			"not null safety call in function %s signature of param %s when calling static function %s",
 			formatSlashesFuncName(fn), param.Name, funcInfo.Name)
@@ -1381,7 +1381,7 @@ func (b *blockWalker) checkSimpleVarSafety(arg ir.Node, fn meta.FuncInfo, paramI
 	paramAllowsNull := types.IsTypeNullable(paramType)
 	varType := varInfo.Type
 	varIsNullable := types.IsTypeNullable(varType)
-	if varIsNullable && !paramAllowsNull {
+	if varIsNullable && types.CanBeNull(varType) && !paramAllowsNull {
 		b.report(arg, LevelWarning, "notNullSafetyFunctionArgumentVariable",
 			"not null safety call in function %s signature of param %s",
 			formatSlashesFuncName(fn), param.Name)
@@ -1400,6 +1400,14 @@ func (b *blockWalker) checkSimpleVarSafety(arg ir.Node, fn meta.FuncInfo, paramI
 
 func (b *blockWalker) isTypeCompatible(varType types.Map, paramType types.Map) bool {
 	if paramType.Empty() {
+		return true
+	}
+
+	forcedParamType := types.NewMapFromMap(solver.ResolveTypes(b.r.metaInfo(), "", paramType, solver.ResolverMap{}))
+	if forcedParamType.Empty() || forcedParamType.Contains("mixed") || forcedParamType.Contains(types.WrapArrayOf("mixed")) {
+		// The type is not known or is mixed after the resolving, for example a parameter without
+		// a type of a method that implements an interface: its type is taken from the interface,
+		// but the interface has no type for it either.
 		return true
 	}
 
@@ -1453,8 +1461,6 @@ func (b *blockWalker) isTypeCompatible(varType types.Map, paramType types.Map) b
 			}
 		}
 	}
-
-	forcedParamType := types.NewMapFromMap(solver.ResolveTypes(b.r.metaInfo(), "", paramType, solver.ResolverMap{}))
 
 	if isClosure && forcedParamType.Contains("callable") {
 		return true
@@ -1558,7 +1564,7 @@ func (b *blockWalker) checkListExprSafety(arg ir.Node, fn meta.FuncInfo, paramIn
 				if found {
 					varType := varInfo.Type
 					varIsNullable := types.IsTypeNullable(varType)
-					if varIsNullable && !types.IsTypeNullable(paramType) {
+					if varIsNullable && types.CanBeNull(varType) && !types.IsTypeNullable(paramType) {
 						{
 							b.report(arg, LevelWarning, "notNullSafetyFunctionArgumentList",
 								"potential null value in list assignment for param %s in function %s",

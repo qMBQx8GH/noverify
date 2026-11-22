@@ -400,9 +400,6 @@ WARNING notSafeCall: potentially not safe call in function rewind signature of p
 WARNING invalidDocblockRef: @see tag refers to unknown symbol League\Flysystem\ReadInterface::read at testdata/flysystem/src/Adapter/Polyfill/StreamedReadingTrait.php:41
      * @see League\Flysystem\ReadInterface::read()
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function call_user_func signature of param callback at testdata/flysystem/src/Adapter/Polyfill/StreamedWritingTrait.php:26
-        return call_user_func($fallbackCall, $path, $contents, $config);
-                              ^^^^^^^^^^^^^
 MAYBE   missingPhpdoc: Missing PHPDoc for \League\Flysystem\Adapter\Polyfill\StreamedWritingTrait::write public method at testdata/flysystem/src/Adapter/Polyfill/StreamedWritingTrait.php:58
     abstract public function write($pash, $contents, Config $config);
                              ^^^^^
@@ -460,9 +457,6 @@ WARNING notExplicitNullableParam: parameter with null default value should be ex
 WARNING notNullSafetyFunctionArgumentPropertyFetch: potential null dereference when accessing property 'path' at testdata/flysystem/src/Handler.php:61
         $metadata = $this->filesystem->getMetadata($this->path);
                                                    ^^^^^^^^^^^
-WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function call_user_func_array signature of param callback at testdata/flysystem/src/Handler.php:128
-            return call_user_func_array($callback, $arguments);
-                                        ^^^^^^^^^
 WARNING unused: Variable $e is unused (use $_ to ignore this inspection or specify --unused-var-regex flag) at testdata/flysystem/src/Handler.php:129
         } catch (BadMethodCallException $e) {
                                         ^^
@@ -487,9 +481,6 @@ WARNING notSafeCall: potentially not safe call in function writeStream signature
 WARNING notNullSafetyFunctionArgumentArrayDimFetch: potential null array access in parameter visibility of function setVisibility at testdata/flysystem/src/MountManager.php:243
                 return $filesystem->setVisibility($pathTo, $config['visibility']);
                                                            ^^^^^^^^^^^^^^^^^^^^^
-WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function call_user_func_array signature of param callback at testdata/flysystem/src/MountManager.php:281
-        return call_user_func_array($callback, $arguments);
-                                    ^^^^^^^^^
 WARNING unused: Variable $e is unused (use $_ to ignore this inspection or specify --unused-var-regex flag) at testdata/flysystem/src/MountManager.php:275
         } catch (PluginNotFoundException $e) {
                                          ^^
@@ -517,9 +508,6 @@ WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function 
 WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function ucfirst signature of param string at testdata/flysystem/src/Plugin/GetWithMetadata.php:42
             if ( ! method_exists($this->filesystem, $method = 'get' . ucfirst($key))) {
                                                                               ^^^^
-WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function call_user_func_array signature of param callback at testdata/flysystem/src/Plugin/PluggableTrait.php:72
-        return call_user_func_array($callback, $arguments);
-                                    ^^^^^^^^^
 WARNING notSafeCall: potentially not safe call in function invokePlugin signature of param filesystem at testdata/flysystem/src/Plugin/PluggableTrait.php:88
             return $this->invokePlugin($method, $arguments, $this);
                                                             ^^^^^
@@ -607,6 +595,3 @@ WARNING unused: Variable $e is unused (use $_ to ignore this inspection or speci
 MAYBE   ternarySimplify: Could rewrite as `static::$extensionToMimeTypeMap[$extension] ?? 'text/plain'` at testdata/flysystem/src/Util/MimeType.php:222
         return isset(static::$extensionToMimeTypeMap[$extension])
                ^^^^^^^^^^^
-WARNING notNullSafetyFunctionArgumentFunctionCall: not null safety call in function strtolower signature of param string when calling function \pathinfo at testdata/flysystem/src/Util/MimeType.php:234
-        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

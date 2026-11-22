@@ -76,15 +76,9 @@ MAYBE   typeHint: Specify the type for the parameter $invalidTypes in PHPDoc, 'a
 WARNING notSafeCall: potentially not safe call in function verifyTypes signature of param type at testdata/options-resolver/OptionsResolver.php:1130
                 if (!$this->verifyTypes($type, $val, $invalidTypes, $level + 1)) {
                                         ^^^^^
-WARNING notSafeCall: potentially not safe call in function verifyTypes signature of param value at testdata/options-resolver/OptionsResolver.php:1130
-                if (!$this->verifyTypes($type, $val, $invalidTypes, $level + 1)) {
-                                               ^^^^
 WARNING notSafeCall: potentially not safe call in function verifyTypes signature of param type at testdata/options-resolver/OptionsResolver.php:1130
                 if (!$this->verifyTypes($type, $val, $invalidTypes, $level + 1)) {
                                         ^^^^^
-WARNING notSafeCall: potentially not safe call in function verifyTypes signature of param value at testdata/options-resolver/OptionsResolver.php:1130
-                if (!$this->verifyTypes($type, $val, $invalidTypes, $level + 1)) {
-                                               ^^^^
 WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function get_class signature of param object at testdata/options-resolver/OptionsResolver.php:1221
             return \get_class($value);
                               ^^^^^^
