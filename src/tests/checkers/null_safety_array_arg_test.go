@@ -132,15 +132,15 @@ function f($m, Res $r) {
 func TestArrayPassedByRefKeepsElements(t *testing.T) {
 	checkLinesOf(t, "notNullSafetyFunctionArgumentVariable", `<?php
 class R2 { /** @return array|false */ public function Fetch() { return false; } }
-function take2(array $row) { return $row; }
+function take2($id = false, $row = []) { return $row; }
 function f(R2 $r) {
   $a = [];
   while ($x = $r->Fetch()) {
-    $a['k'] = $x;
+    $a['k'] = ['S' => rtrim($x['F'], '.')];
   }
   krsort($a);
   foreach ($a as $y) {
-    take2($y);
+    take2(1, $y);
   }
 }
 `)

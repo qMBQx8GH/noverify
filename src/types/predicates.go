@@ -94,7 +94,7 @@ func IsArrayMap(typ Map) bool {
 	}
 	all := true
 	typ.Iterate(func(t string) {
-		if !(isArrayType(t) || t == "array" || IsShape(t) || (len(t) > 0 && t[0] == WArrayOf)) {
+		if !(isArrayType(t) || t == "array" || t == "empty_array" || IsShape(t) || (len(t) > 0 && t[0] == WArrayOf)) {
 			all = false
 		}
 	})

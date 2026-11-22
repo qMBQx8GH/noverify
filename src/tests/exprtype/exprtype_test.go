@@ -1862,7 +1862,7 @@ function returns_array_shift() {
   return array_shift($ints);
 }
 exprtype(returns_array_shift(), 'int');
-exprtype(array_shift($ints), 'int|mixed');
+exprtype(array_shift($ints), 'int');
 
 function returns_array_slice() {
   global $ints;
