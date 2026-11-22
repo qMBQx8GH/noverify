@@ -64,9 +64,6 @@ WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function 
 WARNING notSafeCall: potentially not safe call in function of signature of param value at testdata/math/src/BigNumber.php:236
             $value = static::of($value);
                                 ^^^^^^
-WARNING notNullSafetyFunctionArgumentVariable: not null safety call in function add signature of param a at testdata/math/src/BigNumber.php:241
-                $sum = self::add($sum, $value);
-                                 ^^^^
 WARNING notSafeCall: potentially not safe call in function ltrim signature of param string at testdata/math/src/BigNumber.php:307
         $number = \ltrim($number, '0');
                          ^^^^^^^

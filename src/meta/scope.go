@@ -178,6 +178,35 @@ func (s *Scope) ReplaceVar(v ir.Node, typ types.Map, reason string, flags VarFla
 	s.ReplaceVarName(name, typ, reason, flags)
 }
 
+// NarrowVar replaces the type of the variable in the scope of a branch by the types that
+// a condition leaves there (instanceof, isset, !== null, is_*(), ...).
+//
+// ReplaceVar does not replace the type of a variable declared with @var: an assignment adds to
+// the types of such a variable. A condition is not an assignment, it says that in the branch the
+// value has only a part of the types, so the type is replaced, but the variable stays the variable
+// of @var and the next assignment still adds to its type.
+func (s *Scope) NarrowVar(v ir.Node, typ types.Map, reason string, flags VarFlags) {
+	name, ok := scopeVarName(v)
+	if !ok {
+		return
+	}
+
+	s.NarrowVarName(name, typ, reason, flags)
+}
+
+// NarrowVarName is NarrowVar for the name of the variable.
+func (s *Scope) NarrowVarName(name string, typ types.Map, reason string, flags VarFlags) {
+	if oldVar, ok := s.vars[name]; ok && oldVar.Flags.IsNoReplace() {
+		s.vars[name] = &ScopeVar{
+			Type:  typ,
+			Flags: flags | varNoReplace,
+		}
+		return
+	}
+
+	s.ReplaceVarName(name, typ, reason, flags)
+}
+
 // DelVar deletes specified variable from scope
 func (s *Scope) DelVar(v ir.Node, reason string) {
 	name, ok := scopeVarName(v)

@@ -110,6 +110,12 @@ func (a *andWalker) EnterNode(w ir.Node) (res bool) {
 		return false
 
 	case *ir.IssetExpr:
+		// If isset() is true, the variables are not null. It can be said only if the isset() is
+		// not negated and is not an operand of ||: in `isset($x) || $y` it can be true because of $y.
+		if !a.inNot && !a.hasAncestor(irutil.IsBoolOr) {
+			a.narrowIssetVariables(n, a.trueContext)
+		}
+
 		for _, v := range n.Variables {
 			varNode := utils.FindVarNode(v)
 			if varNode == nil {
@@ -165,7 +171,7 @@ func (a *andWalker) EnterNode(w ir.Node) (res bool) {
 
 					if a.inNot {
 						flags := meta.VarAlwaysDefined | meta.VarImplicit
-						a.trueContext.sc.ReplaceVar(varNode, trueType, "instanceof true", flags)
+						a.trueContext.sc.NarrowVar(varNode, trueType, "instanceof true", flags)
 
 						varInFalse, _ := a.falseContext.sc.GetVar(varNode)
 						varInFalse.Type = varInFalse.Type.Append(falseType)
@@ -177,13 +183,13 @@ func (a *andWalker) EnterNode(w ir.Node) (res bool) {
 						// And in falseContext, on the contrary, they are replaced,
 						// since there are only types that are not in trueContext.
 						flags := meta.VarAlwaysDefined | meta.VarImplicit
-						a.falseContext.sc.ReplaceVar(varNode, falseType, "instanceof false", flags)
+						a.falseContext.sc.NarrowVar(varNode, falseType, "instanceof false", flags)
 					}
 
 				} else {
 					flags := meta.VarAlwaysDefined | meta.VarImplicit
-					a.trueContext.sc.ReplaceVar(varNode, trueType, "instanceof true", flags)
-					a.falseContext.sc.ReplaceVar(varNode, falseType, "instanceof false", flags)
+					a.trueContext.sc.NarrowVar(varNode, trueType, "instanceof true", flags)
+					a.falseContext.sc.NarrowVar(varNode, falseType, "instanceof false", flags)
 				}
 
 			default:
@@ -223,6 +229,13 @@ func (a *andWalker) EnterNode(w ir.Node) (res bool) {
 		a.inNot = true
 
 		res = true
+
+		// `!isset($x)` is false (the falseContext) if $x is not null. It can be said only
+		// if all the operators around are || (guard clauses): `if (!isset($x) || $y) return;`.
+		if isset, ok := n.Expr.(*ir.IssetExpr); ok && !a.hasAncestor(irutil.IsBoolAnd) {
+			a.narrowIssetVariables(isset, a.falseContext)
+		}
+
 		// TODO: consolidate with issets handling?
 		// Probably could collect *expr.Variable instead of
 		// isset and empty nodes and handle them in a single loop.
@@ -245,6 +258,39 @@ func (a *andWalker) EnterNode(w ir.Node) (res bool) {
 
 	w.Walk(a.b)
 	return res
+}
+
+// hasAncestor reports whether some of the && and || operators around the current
+// place of the condition satisfies the predicate.
+func (a *andWalker) hasAncestor(pred func(ir.Node) bool) bool {
+	for i := 0; ; i++ {
+		parent := a.path.NthParent(i)
+		if parent == nil {
+			return false
+		}
+		if pred(parent) {
+			return true
+		}
+	}
+}
+
+// narrowIssetVariables removes null from the types of the variables of isset() in the
+// context where the isset() is true: isset($x) is false for null, so $x is not null there.
+// isset($x['key']) and isset($x->prop) say the same about $x.
+func (a *andWalker) narrowIssetVariables(isset *ir.IssetExpr, context *blockContext) {
+	for _, v := range isset.Variables {
+		variable, ok := utils.FindVarNode(v).(*ir.SimpleVar)
+		if !ok || !a.b.ctx.sc.HaveVar(variable) {
+			continue
+		}
+
+		current := a.exprTypeInContext(context, variable)
+		if !current.Contains("null") {
+			continue
+		}
+
+		context.sc.NarrowVar(variable, current.Clone().Erase("null"), "type narrowing for isset "+variable.Name, meta.VarAlwaysDefined)
+	}
 }
 
 func (a *andWalker) handleVariableCondition(variable *ir.SimpleVar) {
@@ -300,8 +346,8 @@ func (a *andWalker) handleVariableCondition(variable *ir.SimpleVar) {
 		trueType, falseType = falseType, trueType
 	}
 
-	a.trueContext.sc.ReplaceVar(variable, trueType, "type narrowing for "+variable.Name, meta.VarAlwaysDefined)
-	a.falseContext.sc.ReplaceVar(variable, falseType, "type narrowing for "+variable.Name, meta.VarAlwaysDefined)
+	a.trueContext.sc.NarrowVar(variable, trueType, "type narrowing for "+variable.Name, meta.VarAlwaysDefined)
+	a.falseContext.sc.NarrowVar(variable, falseType, "type narrowing for "+variable.Name, meta.VarAlwaysDefined)
 }
 
 func (a *andWalker) handleTypeCheckCondition(expectedType string, args []ir.Node) {
@@ -378,8 +424,8 @@ func (a *andWalker) handleTypeCheckCondition(expectedType string, args []ir.Node
 			trueType, falseType = falseType, trueType
 		}
 
-		a.trueContext.sc.ReplaceVar(variable, trueType, "type narrowing for "+expectedType, meta.VarAlwaysDefined)
-		a.falseContext.sc.ReplaceVar(variable, falseType, "type narrowing for "+expectedType, meta.VarAlwaysDefined)
+		a.trueContext.sc.NarrowVar(variable, trueType, "type narrowing for "+expectedType, meta.VarAlwaysDefined)
+		a.falseContext.sc.NarrowVar(variable, falseType, "type narrowing for "+expectedType, meta.VarAlwaysDefined)
 	}
 }
 
@@ -414,11 +460,11 @@ func (a *andWalker) handleConditionSafety(left ir.Node, right ir.Node, identical
 	if constValue.Constant.Value == "false" || constValue.Constant.Value == "null" {
 		clearType := currentType.Erase(constValue.Constant.Value)
 		if identical {
-			a.trueContext.sc.ReplaceVar(variable, currentType.Erase(clearType.String()), "type narrowing", currentVar.Flags)
-			a.falseContext.sc.ReplaceVar(variable, clearType, "type narrowing", currentVar.Flags)
+			a.trueContext.sc.NarrowVar(variable, currentType.Erase(clearType.String()), "type narrowing", currentVar.Flags)
+			a.falseContext.sc.NarrowVar(variable, clearType, "type narrowing", currentVar.Flags)
 		} else {
-			a.trueContext.sc.ReplaceVar(variable, clearType, "type narrowing", currentVar.Flags)
-			a.falseContext.sc.ReplaceVar(variable, currentType.Erase(clearType.String()), "type narrowing", currentVar.Flags)
+			a.trueContext.sc.NarrowVar(variable, clearType, "type narrowing", currentVar.Flags)
+			a.falseContext.sc.NarrowVar(variable, currentType.Erase(clearType.String()), "type narrowing", currentVar.Flags)
 		}
 		return
 	}
